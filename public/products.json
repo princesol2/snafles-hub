@@ -1,0 +1,308 @@
+{
+  "categories": {
+    "Jewelry": {
+      "name": "Jewelry",
+      "description": "Handcrafted jewelry pieces made with love",
+      "icon": "💎"
+    },
+    "Decor": {
+      "name": "Decor", 
+      "description": "Beautiful handmade home decorations",
+      "icon": "🏺"
+    },
+    "Clothing": {
+      "name": "Clothing",
+      "description": "Cozy handmade clothing and accessories", 
+      "icon": "👗"
+    },
+    "Accessories": {
+      "name": "Accessories",
+      "description": "Stylish handmade accessories for every occasion",
+      "icon": "👜"
+    }
+  },
+  "products": [
+    {
+      "id": "jewelry-001",
+      "name": "Handmade Pearl Necklace",
+      "category": "Jewelry",
+      "price": 89.99,
+      "originalPrice": 120.00,
+      "description": "Elegant freshwater pearl necklace with sterling silver clasp. Each pearl is carefully selected for its lustrous quality. Perfect for special occasions or everyday elegance, this timeless piece adds sophistication to any outfit.",
+      "brand": "SNAFLES Handmade",
+      "material": "Freshwater Pearls, Sterling Silver",
+      "dimensions": "16-20 inches adjustable",
+      "weight": "45g",
+      "warranty": "1 Year",
+      "origin": "Handmade in India",
+      "specifications": {
+        "Material": "Freshwater Pearls, Sterling Silver",
+        "Length": "16-20 inches adjustable",
+        "Pearl Size": "6-8mm",
+        "Clasp": "Sterling Silver Lobster Clasp",
+        "Care Instructions": "Store in soft pouch, avoid chemicals",
+        "Warranty": "1 Year Manufacturer Warranty"
+      },
+      "customerReviews": [
+        {
+          "name": "Sarah M.",
+          "rating": 5,
+          "text": "Absolutely beautiful! The pearls have such a lovely luster and the craftsmanship is excellent."
+        },
+        {
+          "name": "Priya K.",
+          "rating": 5,
+          "text": "Perfect length and the clasp is very secure. Highly recommend!"
+        },
+        {
+          "name": "Mike R.",
+          "rating": 4,
+          "text": "Great quality for the price. The pearls are uniform and well-strung."
+        }
+      ],
+      "image": "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop",
+      "images": [
+        "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop",
+        "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=400&fit=crop"
+      ],
+      "stock": 15,
+      "featured": true,
+      "rating": 4.8,
+      "reviews": 23,
+      "variants": [
+        {"name": "16 inch", "price": 89.99},
+        {"name": "18 inch", "price": 94.99},
+        {"name": "20 inch", "price": 99.99}
+      ],
+      "tags": ["handmade", "pearl", "sterling silver", "elegant"]
+    },
+    {
+      "id": "jewelry-002", 
+      "name": "Boho Silver Earrings",
+      "category": "Jewelry",
+      "price": 34.99,
+      "description": "Delicate silver-plated earrings with turquoise stones. Perfect for adding a bohemian touch to any outfit.",
+      "image": "https://images.unsplash.com/photo-1635767798704-3e94c9e53928?w=400&h=400&fit=crop",
+      "images": [
+        "https://images.unsplash.com/photo-1635767798704-3e94c9e53928?w=400&h=400&fit=crop"
+      ],
+      "stock": 28,
+      "featured": false,
+      "rating": 4.6,
+      "reviews": 15,
+      "variants": [],
+      "tags": ["boho", "silver", "turquoise", "lightweight"]
+    },
+    {
+      "id": "jewelry-003",
+      "name": "Gold Wire Wrapped Ring",
+      "category": "Jewelry", 
+      "price": 45.99,
+      "description": "Handcrafted gold-filled wire wrapped ring with natural gemstone. Each ring is unique and made to order.",
+      "image": "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop",
+      "images": [
+        "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop"
+      ],
+      "stock": 12,
+      "featured": false,
+      "rating": 4.9,
+      "reviews": 8,
+      "variants": [
+        {"name": "Size 6", "price": 45.99},
+        {"name": "Size 7", "price": 45.99},
+        {"name": "Size 8", "price": 45.99},
+        {"name": "Size 9", "price": 45.99}
+      ],
+      "tags": ["gold-filled", "wire wrapped", "gemstone", "custom"]
+    },
+    {
+      "id": "decor-001",
+      "name": "Ceramic Decorative Vase",
+      "category": "Decor",
+      "price": 67.50,
+      "originalPrice": 85.00,
+      "description": "Hand-thrown ceramic vase with unique glaze patterns. Perfect for fresh or dried flowers.",
+      "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop",
+      "images": [
+        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop",
+        "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400&h=400&fit=crop"
+      ],
+      "stock": 8,
+      "featured": true,
+      "rating": 4.7,
+      "reviews": 12,
+      "variants": [
+        {"name": "Small (8\")", "price": 67.50},
+        {"name": "Medium (10\")", "price": 78.50},
+        {"name": "Large (12\")", "price": 89.50}
+      ],
+      "tags": ["ceramic", "handmade", "vase", "home decor"]
+    },
+    {
+      "id": "decor-002",
+      "name": "Macrame Wall Hanging", 
+      "category": "Decor",
+      "price": 54.99,
+      "description": "Beautiful handwoven macrame wall hanging made with natural cotton cord. Adds texture and warmth to any space.",
+      "image": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop",
+      "images": [
+        "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop"
+      ],
+      "stock": 18,
+      "featured": false,
+      "rating": 4.5,
+      "reviews": 9,
+      "variants": [],
+      "tags": ["macrame", "wall art", "cotton", "boho"]
+    },
+    {
+      "id": "decor-003",
+      "name": "Hand-painted Canvas Art",
+      "category": "Decor",
+      "price": 125.00,
+      "description": "Original abstract painting on canvas. Each piece is signed by the artist and comes ready to hang.",
+      "image": "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=400&fit=crop",
+      "images": [
+        "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=400&fit=crop"
+      ],
+      "stock": 3,
+      "featured": true,
+      "rating": 5.0,
+      "reviews": 5,
+      "variants": [
+        {"name": "12\" x 16\"", "price": 125.00},
+        {"name": "16\" x 20\"", "price": 175.00},
+        {"name": "20\" x 24\"", "price": 225.00}
+      ],
+      "tags": ["original art", "abstract", "canvas", "signed"]
+    },
+    {
+      "id": "clothing-001",
+      "name": "Knitted Wool Scarf",
+      "category": "Clothing",
+      "price": 42.99,
+      "description": "Soft merino wool scarf knitted with a traditional cable pattern. Available in multiple colors.",
+      "image": "https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=400&h=400&fit=crop",
+      "images": [
+        "https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=400&h=400&fit=crop"
+      ],
+      "stock": 22,
+      "featured": true,
+      "rating": 4.8,
+      "reviews": 31,
+      "variants": [
+        {"name": "Cream", "price": 42.99},
+        {"name": "Grey", "price": 42.99},
+        {"name": "Navy", "price": 42.99},
+        {"name": "Rose", "price": 42.99}
+      ],
+      "tags": ["merino wool", "knitted", "cable pattern", "warm"]
+    },
+    {
+      "id": "clothing-002",
+      "name": "Embroidered Linen Dress",
+      "category": "Clothing",
+      "price": 98.00,
+      "originalPrice": 130.00,
+      "description": "Flowing linen dress with intricate hand-embroidered details. Perfect for summer occasions.",
+      "image": "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=400&fit=crop",
+      "images": [
+        "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=400&fit=crop"
+      ],
+      "stock": 7,
+      "featured": false,
+      "rating": 4.6,
+      "reviews": 14,
+      "variants": [
+        {"name": "XS", "price": 98.00},
+        {"name": "S", "price": 98.00},
+        {"name": "M", "price": 98.00},
+        {"name": "L", "price": 98.00},
+        {"name": "XL", "price": 98.00}
+      ],
+      "tags": ["linen", "embroidered", "summer", "flowing"]
+    },
+    {
+      "id": "clothing-003",
+      "name": "Alpaca Wool Sweater",
+      "category": "Clothing",
+      "price": 156.99,
+      "description": "Luxuriously soft alpaca wool sweater with a relaxed fit. Sustainably sourced and ethically made.",
+      "image": "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400&h=400&fit=crop",
+      "images": [
+        "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400&h=400&fit=crop"
+      ],
+      "stock": 11,
+      "featured": false,
+      "rating": 4.9,
+      "reviews": 18,
+      "variants": [
+        {"name": "S", "price": 156.99},
+        {"name": "M", "price": 156.99},
+        {"name": "L", "price": 156.99},
+        {"name": "XL", "price": 156.99}
+      ],
+      "tags": ["alpaca wool", "sustainable", "luxury", "ethical"]
+    },
+    {
+      "id": "accessories-001",
+      "name": "Leather Crossbody Bag",
+      "category": "Accessories",
+      "price": 78.50,
+      "originalPrice": 95.00,
+      "description": "Handcrafted genuine leather crossbody bag with adjustable strap. Features multiple compartments.",
+      "image": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop",
+      "images": [
+        "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop"
+      ],
+      "stock": 14,
+      "featured": true,
+      "rating": 4.7,
+      "reviews": 25,
+      "variants": [
+        {"name": "Brown", "price": 78.50},
+        {"name": "Black", "price": 78.50},
+        {"name": "Tan", "price": 78.50}
+      ],
+      "tags": ["genuine leather", "crossbody", "adjustable", "compartments"]
+    },
+    {
+      "id": "accessories-002",
+      "name": "Silk Hair Scrunchies Set",
+      "category": "Accessories",
+      "price": 24.99,
+      "description": "Set of 3 silk hair scrunchies in complementary colors. Gentle on hair and prevents breakage.",
+      "image": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&h=400&fit=crop",
+      "images": [
+        "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&h=400&fit=crop"
+      ],
+      "stock": 35,
+      "featured": false,
+      "rating": 4.4,
+      "reviews": 42,
+      "variants": [
+        {"name": "Pastel Set", "price": 24.99},
+        {"name": "Neutral Set", "price": 24.99},
+        {"name": "Bold Set", "price": 24.99}
+      ],
+      "tags": ["silk", "hair care", "set of 3", "gentle"]
+    },
+    {
+      "id": "accessories-003",
+      "name": "Woven Straw Hat",
+      "category": "Accessories",
+      "price": 49.99,
+      "description": "Classic wide-brimmed straw hat perfect for sunny days. Lightweight and packable for travel.",
+      "image": "https://images.unsplash.com/photo-1521369909029-2afed882baee?w=400&h=400&fit=crop",
+      "images": [
+        "https://images.unsplash.com/photo-1521369909029-2afed882baee?w=400&h=400&fit=crop"
+      ],
+      "stock": 19,
+      "featured": false,
+      "rating": 4.3,
+      "reviews": 16,
+      "variants": [],
+      "tags": ["straw", "wide-brim", "packable", "travel"]
+    }
+  ]
+}
