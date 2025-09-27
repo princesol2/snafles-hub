@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { User, Mail, Phone, MapPin, Edit, Save, X } from 'lucide-react'
+import { User, Mail, Phone, MapPin, Edit, Save, X, Settings, Shield } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const Profile = () => {
@@ -123,6 +123,40 @@ const Profile = () => {
                     <span className="text-gray-600">Loyalty Points</span>
                     <span className="font-semibold">{user.loyaltyPoints || 0}</span>
                   </div>
+                </div>
+              </div>
+
+              {/* Security & Settings */}
+              <div className="bg-white rounded-xl shadow-sm p-6 mt-6">
+                <h3 className="font-semibold text-gray-900 mb-4">Security & Settings</h3>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => navigate('/profile-settings')}
+                    className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center">
+                      <Settings className="h-5 w-5 text-gray-400 mr-3" />
+                      <div>
+                        <div className="font-medium text-gray-900">Account Settings</div>
+                        <div className="text-sm text-gray-500">Manage username, password, and security</div>
+                      </div>
+                    </div>
+                    <span className="text-gray-400">→</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => navigate('/profile-settings')}
+                    className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center">
+                      <Shield className="h-5 w-5 text-gray-400 mr-3" />
+                      <div>
+                        <div className="font-medium text-gray-900">Payment Methods</div>
+                        <div className="text-sm text-gray-500">Manage saved payment methods</div>
+                      </div>
+                    </div>
+                    <span className="text-gray-400">→</span>
+                  </button>
                 </div>
               </div>
             </div>

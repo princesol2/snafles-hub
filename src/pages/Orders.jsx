@@ -1,26 +1,34 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Package, Truck, CheckCircle, Clock, Eye } from 'lucide-react'
+import { Package, Truck, CheckCircle, Clock, Eye, RefreshCw } from 'lucide-react'
+import { useOrders } from '../contexts/OrderContext'
+import LoadingSpinner from '../components/common/LoadingSpinner'
+import toast from 'react-hot-toast'
 
 const Orders = () => {
-  const [orders, setOrders] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { orders, loading, loadOrders, cancelOrder } = useOrders()
+  const [cancellingOrder, setCancellingOrder] = useState(null)
 
   useEffect(() => {
-    // Load orders from localStorage
-    const savedOrders = JSON.parse(localStorage.getItem('snaflesOrders') || '[]')
-    setOrders(savedOrders.reverse()) // Show newest first
-    setLoading(false)
-  }, [])
+    loadOrders()
+  }, [loadOrders])
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'Processing':
+      case 'pending':
         return <Clock className="text-yellow-500" size={20} />
-      case 'Shipped':
+      case 'confirmed':
+        return <Package className="text-blue-500" size={20} />
+      case 'processing':
+        return <Clock className="text-orange-500" size={20} />
+      case 'shipped':
         return <Truck className="text-blue-500" size={20} />
-      case 'Delivered':
+      case 'out_for_delivery':
+        return <Truck className="text-purple-500" size={20} />
+      case 'delivered':
         return <CheckCircle className="text-green-500" size={20} />
+      case 'cancelled':
+        return <Package className="text-red-500" size={20} />
       default:
         return <Package className="text-gray-500" size={20} />
     }
@@ -28,23 +36,41 @@ const Orders = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Processing':
+      case 'pending':
         return 'bg-yellow-100 text-yellow-800'
-      case 'Shipped':
+      case 'confirmed':
         return 'bg-blue-100 text-blue-800'
-      case 'Delivered':
+      case 'processing':
+        return 'bg-orange-100 text-orange-800'
+      case 'shipped':
+        return 'bg-blue-100 text-blue-800'
+      case 'out_for_delivery':
+        return 'bg-purple-100 text-purple-800'
+      case 'delivered':
         return 'bg-green-100 text-green-800'
+      case 'cancelled':
+        return 'bg-red-100 text-red-800'
       default:
         return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const handleCancelOrder = async (orderId) => {
+    setCancellingOrder(orderId)
+    try {
+      await cancelOrder(orderId, 'Cancelled by user')
+      toast.success('Order cancelled successfully')
+    } catch (error) {
+      toast.error('Failed to cancel order')
+    } finally {
+      setCancellingOrder(null)
     }
   }
 
   if (loading) {
     return (
       <div className="container py-16">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
+        <LoadingSpinner size="lg" text="Loading your orders..." />
       </div>
     )
   }
@@ -88,7 +114,7 @@ const Orders = () => {
                     </span>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Order #{order.id}</h3>
+                    <h3 className="font-semibold text-gray-900">Order #{order.orderNumber || order.id}</h3>
                     <p className="text-sm text-gray-500">
                       Placed on {new Date(order.createdAt).toLocaleDateString()}
                     </p>
@@ -99,13 +125,38 @@ const Orders = () => {
                   <div className="text-right">
                     <p className="text-lg font-bold text-primary">₹{order.total.toLocaleString()}</p>
                     <p className="text-sm text-gray-500">
-                      {order.items.length} item{order.items.length > 1 ? 's' : ''}
+                      {order.items?.length || 0} item{(order.items?.length || 0) > 1 ? 's' : ''}
                     </p>
                   </div>
-                  <button className="btn btn-outline">
-                    <Eye size={16} className="mr-2" />
-                    View Details
-                  </button>
+                  <div className="flex space-x-2">
+                    <Link
+                      to={`/track-order/${order.id}`}
+                      className="btn btn-outline text-sm"
+                    >
+                      <Truck size={16} className="mr-2" />
+                      Track
+                    </Link>
+                    <Link
+                      to={`/order-success/${order.id}`}
+                      className="btn btn-outline text-sm"
+                    >
+                      <Eye size={16} className="mr-2" />
+                      View Details
+                    </Link>
+                    {order.status === 'pending' || order.status === 'confirmed' ? (
+                      <button
+                        onClick={() => handleCancelOrder(order.id)}
+                        disabled={cancellingOrder === order.id}
+                        className="btn btn-outline text-sm text-red-600 hover:bg-red-50"
+                      >
+                        {cancellingOrder === order.id ? (
+                          <LoadingSpinner size="sm" />
+                        ) : (
+                          'Cancel'
+                        )}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               </div>
 

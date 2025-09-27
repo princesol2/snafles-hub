@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft } from 'lucide-react'
+import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, User } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'
 import { useAuth } from '../contexts/AuthContext'
+import LoginModal from '../components/common/LoginModal'
 import toast from 'react-hot-toast'
 
 const Cart = () => {
@@ -12,12 +13,15 @@ const Cart = () => {
     removeFromCart, 
     clearCart, 
     getCartTotal, 
-    getCartItemCount 
+    getCartItemCount,
+    getCartLimit,
+    isCartFull
   } = useCart()
   const { user } = useAuth()
   const navigate = useNavigate()
   const [couponCode, setCouponCode] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState(null)
+  const [showLoginModal, setShowLoginModal] = useState(false)
 
   const subtotal = getCartTotal()
   const shipping = subtotal > 999 ? 0 : 99
@@ -29,6 +33,8 @@ const Cart = () => {
     if (newQuantity < 1) {
       removeFromCart(productId)
       toast.success('Item removed from cart')
+    } else if (newQuantity > getCartLimit()) {
+      toast.error(`Maximum ${getCartLimit()} items allowed per product`)
     } else {
       updateQuantity(productId, newQuantity)
     }
@@ -59,8 +65,11 @@ const Cart = () => {
 
   const handleCheckout = () => {
     if (!user) {
-      toast.error('Please login to continue')
-      navigate('/login')
+      setShowLoginModal(true)
+      toast('Please sign in to continue with your purchase', {
+        icon: '🔐',
+        duration: 3000,
+      })
       return
     }
 
@@ -116,15 +125,23 @@ const Cart = () => {
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="text-xl font-semibold mb-4">
                 Shopping Cart ({getCartItemCount()} items)
+                {isCartFull() && (
+                  <span className="ml-2 text-sm text-orange-600 font-normal">
+                    (Cart is full - {getCartLimit()} item limit reached)
+                  </span>
+                )}
               </h2>
               
               <div className="space-y-4">
-                {cart.map((item) => (
+                {cart.filter(item => item && item.id && item.name).map((item) => (
                   <div key={item.id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
                     <img
-                      src={item.image}
+                      src={item.image || '/placeholder-product.jpg'}
                       alt={item.name}
                       className="w-20 h-20 object-cover rounded-lg"
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/80x80?text=No+Image'
+                      }}
                     />
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900">{item.name}</h3>
@@ -132,7 +149,7 @@ const Cart = () => {
                       <p className="text-sm text-gray-500">{item.category}</p>
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-lg font-bold text-primary">
-                          ₹{item.price.toLocaleString()}
+                          ₹{(item.price || 0).toLocaleString()}
                         </span>
                         <div className="flex items-center space-x-2">
                           <button
@@ -272,6 +289,13 @@ const Cart = () => {
           </div>
         </div>
       </div>
+
+      {/* Login Modal */}
+      <LoginModal 
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        redirectTo="/checkout"
+      />
     </div>
   )
 }

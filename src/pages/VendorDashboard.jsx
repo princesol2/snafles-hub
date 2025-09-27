@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { vendorAnalyticsAPI } from '../services/api';
 import { 
   BarChart3, 
   Package, 
@@ -24,6 +25,9 @@ import {
 import ProductManagement from '../components/vendor/ProductManagement';
 import OrderManagement from '../components/vendor/OrderManagement';
 import VendorAnalytics from '../components/vendor/VendorAnalytics';
+import VendorPayments from '../components/vendor/VendorPayments';
+import VendorWallet from '../components/vendor/VendorWallet';
+import VendorCoupons from '../components/vendor/VendorCoupons';
 
 const VendorDashboard = () => {
   const { user } = useAuth();
@@ -52,79 +56,24 @@ const VendorDashboard = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Simulate API calls - replace with actual API calls
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await vendorAnalyticsAPI.getDashboard();
       
-      setStats({
-        totalProducts: 24,
-        totalOrders: 156,
-        totalRevenue: 125000,
-        averageRating: 4.7,
-        pendingOrders: 8,
-        lowStockProducts: 3
-      });
-
-      setProducts([
-        {
-          id: 1,
-          name: 'Handcrafted Silver Necklace',
-          price: 2999,
-          stock: 15,
-          sales: 45,
-          rating: 4.7,
-          status: 'active',
-          image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=200&h=200&fit=crop'
-        },
-        {
-          id: 2,
-          name: 'Ceramic Vase Set',
-          price: 2499,
-          stock: 8,
-          sales: 32,
-          rating: 4.5,
-          status: 'active',
-          image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop'
-        },
-        {
-          id: 3,
-          name: 'Wooden Wall Art',
-          price: 4599,
-          stock: 2,
-          sales: 15,
-          rating: 4.9,
-          status: 'low_stock',
-          image: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=200&h=200&fit=crop'
-        }
-      ]);
-
-      setOrders([
-        {
-          id: 'ORD-001',
-          customer: 'Sarah Johnson',
-          total: 5998,
-          status: 'pending',
-          date: '2024-01-15',
-          items: 2
-        },
-        {
-          id: 'ORD-002',
-          customer: 'Mike Wilson',
-          total: 2499,
-          status: 'processing',
-          date: '2024-01-14',
-          items: 1
-        },
-        {
-          id: 'ORD-003',
-          customer: 'Emma Davis',
-          total: 8997,
-          status: 'shipped',
-          date: '2024-01-13',
-          items: 3
-        }
-      ]);
+      setStats(response.stats);
+      setProducts(response.recentProducts || []);
+      setOrders(response.recentOrders || []);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      // Fallback to mock data if API fails
+      setStats({
+        totalProducts: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        averageRating: 0,
+        pendingOrders: 0,
+        lowStockProducts: 0
+      });
+      setProducts([]);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -576,11 +525,14 @@ const VendorDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Navigation Tabs */}
         <div className="bg-white rounded-lg shadow-sm border mb-6">
-          <nav className="flex space-x-8 px-6">
+          <nav className="flex flex-wrap gap-4 px-6 py-2">
             {[
               { id: 'overview', name: 'Overview', icon: BarChart3 },
               { id: 'products', name: 'Products', icon: Package },
               { id: 'orders', name: 'Orders', icon: ShoppingCart },
+              { id: 'payments', name: 'Payments', icon: DollarSign },
+              { id: 'wallet', name: 'Wallet', icon: DollarSign },
+              { id: 'coupons', name: 'Coupons', icon: Star },
               { id: 'analytics', name: 'Analytics', icon: TrendingUp },
               { id: 'settings', name: 'Settings', icon: Settings }
             ].map((tab) => {
@@ -589,10 +541,10 @@ const VendorDashboard = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                  className={`flex items-center gap-2 py-2 px-3 rounded-md font-medium text-sm ${
                     activeTab === tab.id
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -607,6 +559,9 @@ const VendorDashboard = () => {
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'products' && <ProductManagement />}
         {activeTab === 'orders' && <OrderManagement />}
+        {activeTab === 'payments' && <VendorPayments />}
+        {activeTab === 'wallet' && <VendorWallet />}
+        {activeTab === 'coupons' && <VendorCoupons />}
         {activeTab === 'analytics' && <VendorAnalytics />}
         {activeTab === 'settings' && <SettingsTab />}
       </div>

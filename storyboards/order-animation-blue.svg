@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1880" height="620" viewBox="0 0 1880 620">
+  <defs>
+    <style>
+      :root {
+        --navy: #0B1F3A;         /* deep navy */
+        --sky: #5BBDF3;          /* sky blue accents */
+        --skyLight: #A8DBFF;     /* light blue glow */
+        --orange: #FF8C42;       /* coins highlight */
+        --bg: #F4F8FC;           /* pale grey-blue */
+        --panel: #FFFFFF;        /* panel background */
+      }
+      .panel { fill: var(--panel); stroke: var(--navy); stroke-width: 2; }
+      .label { font: 600 16px Inter, Arial, sans-serif; fill: var(--navy); }
+      .note  { font: 500 14px Inter, Arial, sans-serif; fill: var(--sky); }
+      .stroke-navy { stroke: var(--navy); fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+      .fill-navy { fill: var(--navy); stroke: var(--navy); stroke-width: 4; }
+      .stroke-sky { stroke: var(--sky); fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+      .fill-sky { fill: var(--sky); stroke: var(--sky); stroke-width: 4; }
+      .fill-orange { fill: var(--orange); stroke: var(--orange); stroke-width: 4; }
+      .small { font: 600 12px Inter, Arial, sans-serif; fill: var(--navy); }
+    </style>
+
+    <!-- Subtle blue glow for eyes/sparkles -->
+    <filter id="blueGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Mr. Snafles (geometric, based on provided sketch) -->
+    <symbol id="mrSnafles" viewBox="0 0 180 180">
+      <!-- head outline -->
+      <circle cx="95" cy="70" r="55" class="stroke-navy"/>
+      <!-- eyes -->
+      <circle cx="70" cy="60" r="9" class="stroke-navy"/>
+      <circle cx="110" cy="62" r="9" class="stroke-navy"/>
+      <!-- triangle nose -->
+      <path d="M95,70 L115,80 L95,90 Z" class="stroke-navy"/>
+      <!-- left arm triangle -->
+      <path d="M40,70 L60,120 L40,150 Z" class="stroke-navy"/>
+      <!-- right arm triangle -->
+      <path d="M130,120 L150,150 L110,150 Z" class="stroke-navy"/>
+    </symbol>
+
+    <!-- Shopping cart with cute eyes -->
+    <symbol id="cart" viewBox="0 0 200 140">
+      <rect x="30" y="50" width="120" height="60" rx="8" class="stroke-navy" fill="none"/>
+      <line x1="15" y1="30" x2="40" y2="50" class="stroke-navy"/>
+      <line x1="40" y1="50" x2="145" y2="50" class="stroke-navy"/>
+      <circle cx="60" cy="120" r="14" class="stroke-sky" fill="white"/>
+      <circle cx="120" cy="120" r="14" class="stroke-sky" fill="white"/>
+      <!-- eyes inside cart -->
+      <circle cx="80" cy="70" r="6" fill="#000000"/>
+      <circle cx="110" cy="70" r="6" fill="#000000"/>
+    </symbol>
+
+    <!-- Coin (orange) -->
+    <symbol id="coin" viewBox="0 0 40 40">
+      <circle cx="20" cy="20" r="14" class="fill-orange"/>
+      <text x="20" y="24" text-anchor="middle" class="small" fill="#FFFFFF">S</text>
+    </symbol>
+
+    <!-- Package -->
+    <symbol id="package" viewBox="0 0 100 100">
+      <rect x="10" y="20" width="80" height="60" rx="6" class="stroke-navy" fill="none"/>
+      <line x1="10" y1="50" x2="90" y2="50" class="stroke-navy"/>
+      <line x1="50" y1="20" x2="50" y2="80" class="stroke-navy"/>
+    </symbol>
+
+    <!-- Sparkle -->
+    <symbol id="sparkle" viewBox="0 0 40 40">
+      <line x1="20" y1="4" x2="20" y2="36" class="stroke-sky"/>
+      <line x1="4" y1="20" x2="36" y2="20" class="stroke-sky"/>
+    </symbol>
+  </defs>
+
+  <!-- Sheet background -->
+  <rect x="0" y="0" width="1880" height="620" fill="var(--bg)"/>
+
+  <!-- Panels grid: 4 columns x 2 rows (7th used) -->
+  <!-- Panel metrics: width 420, height 280, margin 20 -->
+
+  <!-- 1) Idle -->
+  <g transform="translate(20,20)">
+    <rect width="420" height="280" class="panel"/>
+    <text x="16" y="28" class="label">1. Idle</text>
+    <text x="16" y="52" class="note">Order Placed ✅</text>
+    <use href="#mrSnafles" x="20" y="70" width="160" height="160"/>
+    <use href="#cart" x="230" y="120" width="150" height="110"/>
+    <!-- soft blue wheels highlight -->
+    <circle cx="290" cy="232" r="7" fill="var(--sky)" opacity="0.25"/>
+    <circle cx="350" cy="232" r="7" fill="var(--sky)" opacity="0.25"/>
+  </g>
+
+  <!-- 2) Bribe (coins pop in orange) -->
+  <g transform="translate(460,20)">
+    <rect width="420" height="280" class="panel"/>
+    <text x="16" y="28" class="label">2. Bribe</text>
+    <use href="#mrSnafles" x="20" y="70" width="160" height="160"/>
+    <use href="#coin" x="120" y="95" width="32" height="32"/>
+    <use href="#coin" x="140" y="115" width="28" height="28"/>
+    <use href="#coin" x="100" y="120" width="24" height="24"/>
+    <use href="#cart" x="236" y="120" width="150" height="110"/>
+  </g>
+
+  <!-- 3) Slide Coins (blue glints, cart eyes glow) -->
+  <g transform="translate(900,20)">
+    <rect width="420" height="280" class="panel"/>
+    <text x="16" y="28" class="label">3. Slide Coins</text>
+    <use href="#mrSnafles" x="10" y="80" width="160" height="160"/>
+    <!-- coins sliding toward cart -->
+    <use href="#coin" x="150" y="140" width="28" height="28"/>
+    <use href="#coin" x="200" y="150" width="28" height="28"/>
+    <use href="#coin" x="250" y="160" width="28" height="28"/>
+    <!-- blue glints -->
+    <use href="#sparkle" x="170" y="120" width="18" height="18"/>
+    <use href="#sparkle" x="230" y="125" width="14" height="14"/>
+    <!-- cart with glowing eyes -->
+    <g filter="url(#blueGlow)">
+      <use href="#cart" x="260" y="110" width="140" height="110"/>
+      <circle cx="340" cy="170" r="9" fill="var(--sky)"/>
+      <circle cx="370" cy="170" r="9" fill="var(--sky)"/>
+    </g>
+  </g>
+
+  <!-- 4) Cart Reacts (bounce) -->
+  <g transform="translate(1340,20)">
+    <rect width="420" height="280" class="panel"/>
+    <text x="16" y="28" class="label">4. Cart Reacts</text>
+    <!-- bounce arc -->
+    <path d="M240,215 C280,170 350,170 390,215" class="stroke-sky"/>
+    <!-- cart slightly lifted -->
+    <g filter="url(#blueGlow)">
+      <use href="#cart" x="250" y="100" width="150" height="110"/>
+      <circle cx="330" cy="160" r="9" fill="var(--sky)"/>
+      <circle cx="360" cy="160" r="9" fill="var(--sky)"/>
+    </g>
+    <use href="#mrSnafles" x="20" y="80" width="160" height="160"/>
+  </g>
+
+  <!-- 5) Delivery Drop (package with sky-blue motion) -->
+  <g transform="translate(20,320)">
+    <rect width="420" height="280" class="panel"/>
+    <text x="16" y="28" class="label">5. Delivery Drop</text>
+    <use href="#mrSnafles" x="22" y="80" width="160" height="160"/>
+    <use href="#package" x="270" y="120" width="90" height="90"/>
+    <!-- motion lines -->
+    <line x1="315" y1="90" x2="315" y2="115" class="stroke-sky"/>
+    <line x1="325" y1="95" x2="325" y2="120" class="stroke-sky"/>
+    <line x1="305" y1="95" x2="305" y2="120" class="stroke-sky"/>
+  </g>
+
+  <!-- 6) Catch & Celebrate (wink + hug) -->
+  <g transform="translate(460,320)">
+    <rect width="420" height="280" class="panel"/>
+    <text x="16" y="28" class="label">6. Catch &amp; Celebrate</text>
+    <!-- Snafles holding package (simple overlap) -->
+    <use href="#mrSnafles" x="22" y="70" width="160" height="160"/>
+    <use href="#package" x="110" y="130" width="80" height="80"/>
+    <!-- wink sparkle -->
+    <g filter="url(#blueGlow)">
+      <use href="#sparkle" x="120" y="90" width="16" height="16"/>
+    </g>
+    <text x="210" y="260" class="note">Happy hug + blue glow</text>
+  </g>
+
+  <!-- 7) End Loop (thank-you bubble) -->
+  <defs>
+    <linearGradient id="navyBlueGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="var(--navy)"/>
+      <stop offset="100%" stop-color="var(--sky)"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(900,320)">
+    <rect width="420" height="280" class="panel"/>
+    <text x="16" y="28" class="label">7. End Loop</text>
+    <!-- speech bubble -->
+    <g>
+      <rect x="80" y="90" width="260" height="100" rx="16" fill="url(#navyBlueGrad)"/>
+      <path d="M120,190 L140,170 L120,170 Z" fill="url(#navyBlueGrad)"/>
+      <text x="210" y="150" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-weight="700" font-size="20" fill="#FFFFFF">Thanks for your order!</text>
+    </g>
+    <text x="170" y="230" class="note">Text fades out in motion</text>
+  </g>
+
+  <!-- Key and palette legend -->
+  <g transform="translate(1340,320)">
+    <rect width="420" height="280" class="panel"/>
+    <text x="16" y="28" class="label">Palette</text>
+    <rect x="20" y="60" width="24" height="24" fill="var(--navy)"/>
+    <text x="52" y="78" class="small">Navy: #0B1F3A</text>
+    <rect x="20" y="96" width="24" height="24" fill="var(--sky)"/>
+    <text x="52" y="114" class="small">Sky: #5BBDF3</text>
+    <rect x="20" y="132" width="24" height="24" fill="var(--orange)"/>
+    <text x="52" y="150" class="small">Orange: #FF8C42</text>
+    <rect x="20" y="168" width="24" height="24" fill="var(--bg)" stroke="var(--navy)"/>
+    <text x="52" y="186" class="small">BG: #F4F8FC</text>
+    <text x="16" y="220" class="note">Adjust tokens in &lt;style&gt; to match brand</text>
+  </g>
+
+  <!-- Footer -->
+  <text x="940" y="610" text-anchor="middle" class="small" fill="#5F6B7A">Order Animation • Blue Theme Storyboard (vector) • edit colors in &lt;style&gt;</text>
+</svg>
+

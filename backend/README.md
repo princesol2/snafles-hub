@@ -1,232 +1,206 @@
 # SNAFLEShub Backend API
 
-A comprehensive Node.js/Express backend API for the SNAFLEShub e-commerce application.
+A Node.js/Express backend API for the SNAFLEShub e-commerce application.
 
-## 🚀 Features
+## Features
 
-### **Authentication & Users**
-- User registration and login
-- JWT-based authentication
-- Password hashing with bcrypt
+### Authentication & Users
+- Registration and login with JWT
+- Password hashing (bcrypt)
 - User profile management
-- Role-based access control (Customer, Vendor, Admin)
+- Role-based access (customer/vendor/admin)
 
-### **Product Management**
-- CRUD operations for products
-- Advanced filtering and search
-- Product categories and variants
-- Image upload support
-- Product reviews and ratings
+### Product Management
+- CRUD for products
+- Filtering and search
+- Categories and variants
+- Image uploads
+- Reviews and ratings
 - Inventory management
 
-### **Vendor System**
+### Vendor System
 - Vendor registration and management
 - Vendor product listings
-- Vendor statistics and analytics
-- Vendor verification system
+- Statistics and analytics
+- Verification flow
 
-### **Order Management**
-- Order creation and processing
-- Order status tracking
-- Order history for users
-- Order cancellation and refunds
-- Shipping and tracking integration
+### Orders
+- Create and process orders
+- Status tracking and history
+- Cancellation and refunds
+- Shipping/tracking integration
 
-### **Payment Processing**
-- Stripe integration (ready for implementation)
-- Multiple payment methods
-- Payment intent creation
+### Payments
+- Stripe integration (payment intents)
+- Multiple methods (extensible)
 - Refund processing
-- Payment method management
 
-### **File Upload**
+### File Upload
 - Image upload with validation
-- File size and type restrictions
-- Secure file storage
-- Multiple file upload support
+- File type/size limits
+- Secure storage
 
-## 🛠️ Technology Stack
+## Technology Stack
+- Node.js, Express.js
+- MongoDB with Mongoose
+- JWT (jsonwebtoken)
+- Helmet, CORS, Rate limiting
+- Multer (file uploads)
+- Express Validator
+- Nodemailer (optional)
+- Stripe
 
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: MongoDB with Mongoose
-- **Authentication**: JWT (jsonwebtoken)
-- **Security**: Helmet, CORS, Rate Limiting
-- **File Upload**: Multer
-- **Validation**: Express Validator
-- **Email**: Nodemailer
-- **Payments**: Stripe
-- **Environment**: dotenv
-
-## 📦 Installation
+## Installation
 
 ### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB (local or Atlas)
+- Node.js v14+
+- MongoDB (local/Atlas)
 - npm or yarn
 
 ### Quick Start
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd snafleshub-backend
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Environment Setup**
-   ```bash
-   cp env.example .env
-   # Edit .env file with your configuration
-   ```
-
-4. **Start the server**
-   ```bash
-   # Development mode
-   npm run dev
-   
-   # Production mode
-   npm start
-   
-   # With database seeding
-   npm run seed
-   ```
-
-### Using the Startup Scripts
-
-**Windows:**
 ```bash
-# Basic startup
-run-backend.bat
+# from project root
+cd backend
+npm install
+cp env.example .env
 
-# Development mode
-run-backend.bat --dev
+# development
+npm run dev
 
-# With database seeding
-run-backend.bat --seed
+# production
+npm start
+
+# seed database (optional)
+npm run seed
 ```
 
-**Linux/macOS:**
+### Mock API Server (no DB required)
 ```bash
-# Make executable
+# from project root
+# Windows
+../run-backend.bat --mock --dev
+# macOS/Linux
+../run-backend.sh --mock --dev
+
+# or (from project root) via npm
+npm run start:backend:dev:mock
+```
+
+### Startup Scripts
+
+Windows:
+```bash
+run-backend.bat            # basic
+run-backend.bat --dev      # dev
+run-backend.bat --seed     # seed
+```
+
+Linux/macOS:
+```bash
 chmod +x run-backend.sh
-
-# Basic startup
-./run-backend.sh
-
-# Development mode
-./run-backend.sh --dev
-
-# With database seeding
-./run-backend.sh --seed
+./run-backend.sh           # basic
+./run-backend.sh --dev     # dev
+./run-backend.sh --seed    # seed
 ```
 
-## 🔧 Configuration
+## Configuration
 
-### Environment Variables
-
-Create a `.env` file in the backend directory:
-
+Create `.env` in `backend/`:
 ```env
-# Server Configuration
 PORT=5000
 NODE_ENV=development
 
 # Database
 MONGODB_URI=mongodb://localhost:27017/snafleshub
 
-# JWT Secret
+# JWT
 JWT_SECRET=your-super-secret-jwt-key-here
 
-# Email Configuration
+# Email (optional)
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-app-password
 
-# Stripe Configuration
+# Stripe
 STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
 
 # Frontend URL
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:5173
 
-# File Upload
+# Uploads
 UPLOAD_PATH=./uploads
 MAX_FILE_SIZE=5242880
 ```
 
-## 📚 API Endpoints
+## API Endpoints (high level)
 
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - User login
-- `GET /api/auth/me` - Get current user
-- `PUT /api/auth/profile` - Update user profile
-- `POST /api/auth/change-password` - Change password
+### Auth
+- POST `/api/auth/register` — register
+- POST `/api/auth/login` — login
+- GET `/api/auth/me` — current user
+- PUT `/api/auth/profile` — update profile
+- POST `/api/auth/change-password` — change password
 
 ### Products
-- `GET /api/products` - Get all products (with filtering)
-- `GET /api/products/:id` - Get single product
-- `POST /api/products` - Create product (Vendor/Admin)
-- `PUT /api/products/:id` - Update product (Vendor/Admin)
-- `DELETE /api/products/:id` - Delete product (Vendor/Admin)
-- `POST /api/products/:id/reviews` - Add product review
+- GET `/api/products` — list (filters supported)
+- GET `/api/products/:id` — detail
+- POST `/api/products` — create (vendor/admin)
+- PUT `/api/products/:id` — update (vendor/admin)
+- DELETE `/api/products/:id` — delete (vendor/admin)
+- POST `/api/products/:id/reviews` — add review
 
 ### Vendors
-- `GET /api/vendors` - Get all vendors
-- `GET /api/vendors/:id` - Get single vendor with products
-- `POST /api/vendors` - Create vendor (Admin)
-- `PUT /api/vendors/:id` - Update vendor (Admin)
-- `DELETE /api/vendors/:id` - Delete vendor (Admin)
-- `PUT /api/vendors/:id/verify` - Verify vendor (Admin)
-- `GET /api/vendors/:id/stats` - Get vendor statistics
+- GET `/api/vendors` — list
+- GET `/api/vendors/:id` — detail + products
+- POST `/api/vendors` — create (admin)
+- PUT `/api/vendors/:id` — update (admin)
+- DELETE `/api/vendors/:id` — delete (admin)
+- PUT `/api/vendors/:id/verify` — verify (admin)
+- GET `/api/vendors/:id/stats` — stats
 
 ### Orders
-- `GET /api/orders` - Get user orders
-- `GET /api/orders/:id` - Get single order
-- `POST /api/orders` - Create new order
-- `PUT /api/orders/:id/status` - Update order status
-- `POST /api/orders/:id/cancel` - Cancel order
-- `GET /api/orders/tracking/:orderNumber` - Track order
+- GET `/api/orders` — my orders
+- GET `/api/orders/:id` — detail
+- POST `/api/orders` — create
+- PUT `/api/orders/:id/status` — update status
+- POST `/api/orders/:id/cancel` — cancel
+- GET `/api/orders/tracking/:orderNumber` — track
 
 ### Users
-- `GET /api/users/profile` - Get user profile
-- `PUT /api/users/profile` - Update user profile
-- `POST /api/users/wishlist` - Add to wishlist
-- `DELETE /api/users/wishlist/:productId` - Remove from wishlist
-- `GET /api/users/wishlist` - Get user wishlist
-- `GET /api/users/stats` - Get user statistics
+- GET `/api/users/profile` — get profile
+- PUT `/api/users/profile` — update profile
+- POST `/api/users/wishlist` — add to wishlist
+- DELETE `/api/users/wishlist/:productId` — remove from wishlist
+- GET `/api/users/wishlist` — get wishlist
+- GET `/api/users/stats` — stats
 
-### File Upload
-- `POST /api/upload/single` - Upload single image
-- `POST /api/upload/multiple` - Upload multiple images
-- `DELETE /api/upload/:filename` - Delete uploaded file
+### Upload
+- POST `/api/upload/single` — single image
+- POST `/api/upload/multiple` — multiple images
+- DELETE `/api/upload/:filename` — delete file
 
 ### Payments
-- `POST /api/payments/create-payment-intent` - Create payment intent
-- `POST /api/payments/confirm-payment` - Confirm payment
-- `POST /api/payments/refund` - Process refund
-- `GET /api/payments/methods` - Get payment methods
+- POST `/api/payments/create-payment-intent`
+- POST `/api/payments/confirm-payment`
+- POST `/api/payments/refund`
+- GET `/api/payments/methods`
 
-### Health Check
-- `GET /api/health` - Server health status
+### Health
+- GET `/api/health`
 
-## 🗄️ Database Models
+## Models (shape overview)
 
 ### User
-```javascript
+```js
 {
   name: String,
-  email: String (unique),
-  password: String (hashed),
+  email: String, // unique
+  password: String, // hashed
   phone: String,
   address: Object,
-  role: String (customer/vendor/admin),
+  role: 'customer'|'vendor'|'admin',
   loyaltyPoints: Number,
   preferences: Object,
   isActive: Boolean
@@ -234,7 +208,7 @@ MAX_FILE_SIZE=5242880
 ```
 
 ### Product
-```javascript
+```js
 {
   name: String,
   description: String,
@@ -253,7 +227,7 @@ MAX_FILE_SIZE=5242880
 ```
 
 ### Vendor
-```javascript
+```js
 {
   name: String,
   description: String,
@@ -269,9 +243,9 @@ MAX_FILE_SIZE=5242880
 ```
 
 ### Order
-```javascript
+```js
 {
-  orderNumber: String (unique),
+  orderNumber: String, // unique
   user: ObjectId,
   items: [Object],
   shipping: Object,
@@ -282,29 +256,22 @@ MAX_FILE_SIZE=5242880
 }
 ```
 
-## 🔒 Security Features
+## Security
+- JWT auth, bcrypt
+- Rate limiting, CORS, Helmet
+- Input validation
+- File upload validation (type/size)
 
-- **JWT Authentication**: Secure token-based authentication
-- **Password Hashing**: bcrypt for password security
-- **Rate Limiting**: Prevent API abuse
-- **CORS**: Cross-origin resource sharing protection
-- **Helmet**: Security headers
-- **Input Validation**: Express validator for data validation
-- **File Upload Security**: File type and size validation
-
-## 🚀 Deployment
-
-### Local Development
+## Deployment
 ```bash
+# dev
 npm run dev
-```
 
-### Production
-```bash
+# prod
 npm start
 ```
 
-### Docker (Optional)
+### Docker (optional)
 ```dockerfile
 FROM node:18-alpine
 WORKDIR /app
@@ -315,107 +282,24 @@ EXPOSE 5000
 CMD ["npm", "start"]
 ```
 
-## 📊 Database Seeding
-
-The backend includes a seeding script to populate the database with sample data:
-
-```bash
-npm run seed
-```
-
-This creates:
-- Demo users (including admin)
-- Sample vendors
-- Sample products
-- Test data for development
-
-## 🧪 Testing
-
-```bash
-# Run tests (when implemented)
-npm test
-
-# Run with coverage
-npm run test:coverage
-```
-
-## 📝 API Documentation
-
-### Request/Response Format
-
-All API responses follow this format:
-
-```javascript
-// Success Response
-{
-  "message": "Success message",
-  "data": { ... },
-  "pagination": { ... } // For paginated responses
-}
-
-// Error Response
-{
-  "message": "Error message",
-  "errors": [ ... ] // For validation errors
-}
-```
-
-### Authentication
-
-Include JWT token in Authorization header:
-```
-Authorization: Bearer <your-jwt-token>
-```
-
-### Pagination
-
-For paginated endpoints, use query parameters:
-```
-GET /api/products?page=1&limit=20
-```
-
-### Filtering
-
-Many endpoints support filtering:
-```
-GET /api/products?category=Jewelry&minPrice=1000&maxPrice=5000&search=necklace
-```
-
-## 🔧 Development
-
-### Project Structure
+## Project Structure
 ```
 backend/
-├── models/          # Database models
-├── routes/          # API routes
-├── middleware/      # Custom middleware
-├── scripts/         # Database seeding
-├── uploads/         # File uploads
-├── server.js        # Main server file
-├── package.json     # Dependencies
-└── README.md        # This file
+  models/
+  routes/
+  middleware/
+  scripts/
+  uploads/
+  server.js
+  package.json
+  README.md
 ```
 
-### Adding New Features
-
-1. Create model in `models/`
-2. Create routes in `routes/`
-3. Add middleware if needed
-4. Update server.js to include routes
-5. Test with API client
-
-## 🤝 Contributing
-
+## Contributing
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+3. Make changes and tests
+4. Open a pull request
 
-## 📄 License
-
-This project is licensed under the MIT License.
-
----
-
-**SNAFLEShub Backend** - Powering the future of e-commerce 🚀
+## License
+MIT

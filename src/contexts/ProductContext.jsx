@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { productsAPI, vendorsAPI } from '../services/api'
+import { demoProducts, demoVendors } from '../data/demoData'
 
 const ProductContext = createContext()
 
@@ -32,88 +33,64 @@ export const ProductProvider = ({ children }) => {
         vendorsAPI.getVendors()
       ])
       
-      setProducts(productsResponse.products || productsResponse || [])
-      setVendors(vendorsResponse.vendors || vendorsResponse || [])
+      const normalizeVendor = (v) => ({
+        ...v,
+        id: v.id || v._id
+      })
+
+      const normalizeProduct = (p) => ({
+        ...p,
+        id: p.id || p._id,
+        // Ensure a convenient image field exists
+        image: p.image || (Array.isArray(p.images) ? p.images[0] : undefined),
+        // Normalize nested vendor
+        vendor: typeof p.vendor === 'object' && p.vendor !== null
+          ? { ...p.vendor, id: p.vendor.id || p.vendor._id }
+          : p.vendor
+      })
+
+      let rawProducts = productsResponse.products || productsResponse || []
+      let rawVendors = vendorsResponse.vendors || vendorsResponse || []
+
+      // Fallback to demo data in dev if API returns empty
+      const allowDemo = (import.meta.env.VITE_ALLOW_DEMO_DATA === 'true') || import.meta.env.DEV
+      if (allowDemo && rawProducts.length === 0) {
+        console.warn('API returned no products. Falling back to demo data.')
+        rawProducts = demoProducts
+        rawVendors = demoVendors
+      }
+
+      const normalizedVendors = rawVendors.map(normalizeVendor)
+      const normalizedProducts = rawProducts.map(normalizeProduct)
+
+      setProducts(normalizedProducts)
+      setVendors(normalizedVendors)
       setError(null)
       console.log('Data loaded successfully from API!')
     } catch (err) {
-      setError('Failed to load data: ' + err.message)
       console.error('Error loading data from API:', err)
-      
-      // Fallback to mock data if API fails
-      console.log('Using fallback mock data...')
-      setProducts([
-        {
-          id: "jewelry-001",
-          name: "Handmade Pearl Necklace",
-          category: "Jewelry",
-          price: 89.99,
-          image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop",
-          images: ["https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop"],
-          vendor: { id: "vendor-001", name: "Artisan Crafts Co." },
-          stock: 15,
-          featured: true,
-          rating: 4.8,
-          reviews: 23
-        },
-        {
-          id: "decor-001",
-          name: "Ceramic Vase",
-          category: "Decor",
-          price: 45.99,
-          image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop",
-          images: ["https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop"],
-          vendor: { id: "vendor-002", name: "Creative Home Studio" },
-          stock: 8,
-          featured: true,
-          rating: 4.7,
-          reviews: 12
-        },
-        {
-          id: "clothing-001",
-          name: "Boho Silver Earrings",
-          category: "Jewelry",
-          price: 25.99,
-          image: "https://images.unsplash.com/photo-1635767798704-3e94c9e53928?w=400&h=400&fit=crop",
-          images: ["https://images.unsplash.com/photo-1635767798704-3e94c9e53928?w=400&h=400&fit=crop"],
-          vendor: { id: "vendor-001", name: "Artisan Crafts Co." },
-          stock: 28,
-          featured: false,
-          rating: 4.6,
-          reviews: 15
-        }
-      ])
-      setVendors([
-        {
-          id: "vendor-001",
-          name: "Artisan Crafts Co.",
-          type: "local",
-          location: "Mumbai, India",
-          description: "Traditional Indian handicrafts and jewelry",
-          image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop",
-          rating: 4.8
-        },
-        {
-          id: "vendor-002",
-          name: "Creative Home Studio",
-          type: "local",
-          location: "Delhi, India",
-          description: "Modern home decor and accessories",
-          image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop",
-          rating: 4.7
-        }
-      ])
+      const allowDemo = (import.meta.env.VITE_ALLOW_DEMO_DATA === 'true') || import.meta.env.DEV
+      if (allowDemo) {
+        console.warn('Falling back to demo data after API error.')
+        setProducts(demoProducts)
+        setVendors(demoVendors)
+        setError(null)
+      } else {
+        setError('Failed to load data: ' + err.message)
+        setProducts([])
+        setVendors([])
+      }
     } finally {
       setLoading(false)
     }
   }
 
   const getProductById = (id) => {
-    return products.find(product => product.id === id)
+    return products.find(product => (product.id || product._id) === id)
   }
 
   const getVendorById = (id) => {
-    return vendors.find(vendor => vendor.id === id)
+    return vendors.find(vendor => (vendor.id || vendor._id) === id)
   }
 
   const getProductsByCategory = (category) => {
@@ -122,9 +99,11 @@ export const ProductProvider = ({ children }) => {
   }
 
   const getProductsByVendor = (vendorId) => {
-    return products.filter(product => 
-      product.vendor?.id === vendorId || product.vendor === vendorId
-    )
+    return products.filter(product => {
+      const v = product.vendor
+      const currentVendorId = typeof v === 'object' && v !== null ? (v.id || v._id) : v
+      return currentVendorId === vendorId
+    })
   }
 
   const getFeaturedProducts = () => {

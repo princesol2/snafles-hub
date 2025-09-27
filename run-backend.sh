@@ -3,7 +3,7 @@
 # SNAFLEShub Backend Startup Script
 # This script sets up and runs the backend server
 
-echo "🚀 Starting SNAFLEShub Backend Server..."
+echo "?? Starting SNAFLEShub Backend Server..."
 echo "========================================"
 
 # Colors for output
@@ -124,21 +124,47 @@ if [ "$1" = "--seed" ] || [ "$1" = "-s" ]; then
     fi
 fi
 
+# Parse flags
+RUN_DEV=0
+USE_MOCK=0
+
+for arg in "$@"; do
+  case $arg in
+    --dev|-d)
+      RUN_DEV=1
+      ;;
+    --mock|-m)
+      USE_MOCK=1
+      ;;
+  esac
+done
+
 # Start the server
 print_status "Starting the server..."
 echo ""
-echo "🌐 Server will be available at: http://localhost:5000"
-echo "📚 API Documentation: http://localhost:5000/api/health"
-echo "🔧 Environment: ${NODE_ENV:-development}"
+echo "?? Server will be available at: http://localhost:5000"
+echo "?? API Health:        http://localhost:5000/api/health"
+echo "?? Environment: ${NODE_ENV:-development}"
 echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""
 
-# Start the server
-if [ "$1" = "--dev" ] || [ "$1" = "-d" ]; then
-    print_status "Starting in development mode with nodemon..."
-    npm run dev
+# Start the server (mock or real)
+if [ "$USE_MOCK" -eq 1 ]; then
+  if [ "$RUN_DEV" -eq 1 ]; then
+    print_status "Using MOCK API in development mode..."
+    npm run dev:mock
+  else
+    print_status "Using MOCK API in production mode..."
+    npm run start:mock
+  fi
 else
-    print_status "Starting in production mode..."
+  if [ "$RUN_DEV" -eq 1 ]; then
+    print_status "Starting REAL API in development mode..."
+    npm run dev
+  else
+    print_status "Starting REAL API in production mode..."
     npm start
+  fi
 fi
+

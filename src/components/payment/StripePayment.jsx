@@ -27,14 +27,15 @@ const PaymentForm = ({ amount, onSuccess, onError, orderId }) => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          amount: amount * 100, // Convert to cents
+          amount: amount, // major currency units (backend converts to minor)
           currency: 'inr',
           orderId: orderId
         })
       });
 
-      const { paymentIntent } = await response.json();
-      setClientSecret(paymentIntent.client_secret);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.message || 'Failed to create payment intent');
+      setClientSecret(data.clientSecret);
     } catch (error) {
       console.error('Error creating payment intent:', error);
       toast.error('Failed to initialize payment');

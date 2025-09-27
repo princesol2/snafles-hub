@@ -2,7 +2,9 @@ const express = require('express');
 const { body, query, validationResult } = require('express-validator');
 const Vendor = require('../models/Vendor');
 const Product = require('../models/Product');
+const Order = require('../models/Order');
 const { auth, adminAuth } = require('../middleware/auth');
+const VendorFeedback = require('../models/VendorFeedback');
 
 const router = express.Router();
 
@@ -266,3 +268,37 @@ router.get('/:id/stats', auth, async (req, res) => {
 });
 
 module.exports = router;
+// Vendor feedback routes
+
+// @route   POST /api/vendors/feedback
+// @desc    Submit vendor feedback (vendor only)
+// @access  Private (Vendor/Admin)
+router.post('/feedback', auth, async (req, res) => {
+  try {
+    if (!['vendor', 'admin'].includes(req.user.role)) {
+      return res.status(403).json({ message: 'Only vendors can submit feedback' });
+    }
+    const { rating, comment } = req.body || {};
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+    }
+    const fb = await VendorFeedback.create({ vendor: req.user._id, rating, comment });
+    res.status(201).json({ message: 'Feedback submitted', feedbackId: fb._id });
+  } catch (error) {
+    console.error('Submit vendor feedback error:', error);
+    res.status(500).json({ message: 'Server error while submitting feedback' });
+  }
+});
+
+// @route   GET /api/vendors/feedback
+// @desc    List vendor feedback (admin only)
+// @access  Private (Admin)
+router.get('/feedback', adminAuth, async (req, res) => {
+  try {
+    const items = await VendorFeedback.find().populate('vendor', 'name email');
+    res.json({ feedback: items });
+  } catch (error) {
+    console.error('List vendor feedback error:', error);
+    res.status(500).json({ message: 'Server error while fetching feedback' });
+  }
+});

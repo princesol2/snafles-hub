@@ -5,7 +5,7 @@ import { Eye, EyeOff, Store, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const VendorLogin = () => {
-  const { login } = useAuth();
+  const { loginVendor } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
@@ -26,23 +26,12 @@ const VendorLogin = () => {
     setLoading(true);
 
     try {
-      // Simulate API call - replace with actual vendor login API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, check if it's a vendor email
-      if (formData.email.includes('vendor') || formData.email.includes('admin')) {
-        const user = {
-          id: '1',
-          name: 'Vendor User',
-          email: formData.email,
-          role: formData.email.includes('admin') ? 'admin' : 'vendor'
-        };
-        
-        login(user);
+      const result = await loginVendor(formData.email, formData.password);
+      if (result.success) {
         toast.success('Login successful!');
         navigate('/vendor-dashboard');
       } else {
-        toast.error('Invalid vendor credentials');
+        toast.error(result.message || 'Invalid vendor credentials');
       }
     } catch (error) {
       toast.error('Login failed. Please try again.');

@@ -1,262 +1,193 @@
 # SNAFLEShub - E-commerce Marketplace
 
-A modern, full-stack e-commerce marketplace built with React and Node.js, featuring vendor management, negotiation system, payment integration, and review system.
+A modern, full-stack e-commerce marketplace built with React and Node.js, featuring vendor management, negotiation, payments, and reviews.
 
-## 🚀 Features
+## Features
 
 ### Frontend (React)
-- **Modern UI/UX**: Built with React 18, Vite, and Tailwind CSS
-- **Responsive Design**: Mobile-first approach with beautiful animations
-- **State Management**: Context API for authentication, cart, and products
-- **Routing**: React Router DOM for seamless navigation
-- **Payment Integration**: Stripe payment processing
-- **Review System**: Fiverr-style rating and review system
-- **Negotiation System**: Real-time messaging between users and vendors
+- Modern UI/UX with React 18, Vite, Tailwind CSS
+- Responsive design and animations (Framer Motion)
+- State via React Context (auth, cart, products)
+- Routing with React Router DOM
+- Stripe payments integration
+- Reviews with ratings and stats
+- Negotiation messaging UI
 
 ### Backend (Node.js/Express)
-- **RESTful API**: Express.js server with MongoDB
-- **Authentication**: JWT-based auth for users, vendors, and admins
-- **File Upload**: Image upload for products and profiles
-- **Payment Processing**: Stripe integration for secure payments
-- **Real-time Features**: WebSocket support for negotiations
+- RESTful API with Express + MongoDB (Mongoose)
+- JWT authentication (users, vendors, admins)
+- Image upload (Multer)
+- Stripe payment intents
+- WebSocket-ready for negotiations
 
-### User Roles
-- **Customers**: Browse, purchase, negotiate, and review
-- **Vendors**: Manage products, orders, and analytics
-- **Admins**: Platform management and moderation
+### Roles
+- Customers: browse, purchase, negotiate, review
+- Vendors: manage products, orders, analytics
+- Admins: platform management and moderation
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
-- React 18
-- Vite
-- Tailwind CSS
-- React Router DOM
-- Framer Motion
-- Lucide React (Icons)
-- React Hot Toast
+- React 18, Vite, Tailwind CSS
+- React Router, Framer Motion, Lucide, React Hot Toast
 - Stripe.js
 
 ### Backend
-- Node.js
-- Express.js
-- MongoDB
-- Mongoose
-- JWT
-- Bcrypt
-- Multer
-- Stripe
+- Node.js, Express.js, MongoDB, Mongoose
+- JWT, bcrypt, Multer, Stripe
 
-## 📦 Installation
+## Installation
 
 ### Prerequisites
-- Node.js (v16 or higher)
+- Node.js v16+
 - MongoDB (local or cloud)
 - Stripe account (for payments)
 
-### Frontend Setup
+### Frontend
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
 ```
 
-### Backend Setup
+### Backend
 ```bash
-# Navigate to backend directory
 cd backend
-
-# Install dependencies
 npm install
-
-# Copy environment template
 cp env.example .env
-
-# Edit .env with your configuration
-# MONGODB_URI=your_mongodb_connection_string
-# JWT_SECRET=your_jwt_secret
-# STRIPE_SECRET_KEY=your_stripe_secret_key
-
-# Start backend server
+# edit .env with your values
 npm start
 ```
 
-### Quick Setup (Windows)
+### Windows Quick Setup
 ```bash
-# Run the setup script
 setup.bat
 ```
 
-## 🔧 Configuration
+## Configuration
 
-### Environment Variables
-
-#### Frontend (.env.local)
+### Frontend (.env.local)
 ```env
 VITE_API_URL=http://localhost:5000
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key
 ```
 
-#### Backend (.env)
+### Backend (.env)
 ```env
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/snafleshub
 JWT_SECRET=your_jwt_secret_key_here
-STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+STRIPE_SECRET_KEY=sk_test_your_secret_key
 ```
 
-## 🚀 Running the Application
+## Running
 
-### Development Mode
+### Development
 ```bash
-# Terminal 1 - Frontend
+# Terminal 1 (frontend)
 npm run dev
 
-# Terminal 2 - Backend
+# Terminal 2 (backend)
+# Real API
 cd backend && npm start
+
+# OR use the Mock API server (recommended for now)
+# Windows
+./run-backend.bat --mock --dev
+# macOS/Linux
+./run-backend.sh --mock --dev
+# or from project root via npm scripts
+npm run start:backend:dev:mock
 ```
 
-### Production Mode
+### Production
 ```bash
-# Build frontend
 npm run build
-
-# Start backend
 cd backend && npm start
 ```
 
-## 📁 Project Structure
+### Mock API Notes
+- Frontend requests use base `'/api'` and Vite proxies to `http://localhost:5000`.
+- The mock server runs on port `5000` and implements the routes used in the app.
+- No database is required when running the mock server.
 
+## Project Structure
 ```
 SNAFLEShub/
-├── public/                 # Static assets
-│   ├── products.json      # Product data
-│   └── vendors.json       # Vendor data
-├── src/                   # React frontend
-│   ├── components/        # Reusable components
-│   │   ├── layout/        # Layout components
-│   │   ├── payment/       # Payment components
-│   │   ├── reviews/       # Review components
-│   │   └── vendor/        # Vendor components
-│   ├── contexts/          # React contexts
-│   ├── pages/             # Page components
-│   ├── services/          # API services
-│   └── main.jsx          # App entry point
-├── backend/               # Node.js backend
-│   ├── models/           # Database models
-│   ├── routes/           # API routes
-│   ├── middleware/       # Custom middleware
-│   └── server.js         # Server entry point
-└── README.md
+  public/
+  src/
+    components/
+      layout/
+      payment/
+      reviews/
+      vendor/
+    contexts/
+    pages/
+    services/
+    main.jsx
+  backend/
+    models/
+    routes/
+    middleware/
+    server.js
+  README.md
 ```
 
-## 🔐 Security Features
+## Security
+- JWT auth, bcrypt password hashing
+- Env var configuration
+- Input validation, CORS, rate limiting
 
-- JWT-based authentication
-- Password hashing with bcrypt
-- Environment variable protection
-- Input validation and sanitization
-- CORS configuration
-- Rate limiting
+## Payments
+- Stripe payment processing, secure checkout, confirmations
 
-## 💳 Payment Integration
+## Reviews
+- 5-star ratings, written reviews, stats, moderation
 
-- Stripe payment processing
-- Secure checkout flow
-- Payment confirmation
-- Order management
+## Negotiation
+- Real-time messaging, price negotiation, moderation, history
 
-## ⭐ Review System
+## UI/UX
+- Modern, responsive, dark/light themes, loading and error states
 
-- 5-star rating system
-- Written reviews
-- Review statistics
-- Vendor profile ratings
-- Review moderation
+## Pages
 
-## 🤝 Negotiation System
+### Customer
+- Home, Products, Product Detail, Cart, Checkout, Orders, Profile, Wishlist, Reviews
 
-- Real-time messaging
-- Price negotiation
-- Admin moderation
-- Message history
+### Vendor
+- Dashboard, Product Management, Order Management, Analytics, Profile
 
-## 🎨 UI/UX Features
+### Admin
+- Dashboard, User Management, Vendor Management, Negotiation Moderation, Settings
 
-- Modern, responsive design
-- Smooth animations
-- Dark/light theme support
-- Mobile-optimized
-- Loading states
-- Error handling
-
-## 📱 Pages
-
-### Customer Pages
-- Home
-- Products
-- Product Detail
-- Cart
-- Checkout
-- Orders
-- Profile
-- Wishlist
-- Reviews
-
-### Vendor Pages
-- Dashboard
-- Product Management
-- Order Management
-- Analytics
-- Profile
-
-### Admin Pages
-- Dashboard
-- User Management
-- Vendor Management
-- Negotiation Moderation
-- Platform Settings
-
-## 🚀 Deployment
+## Deployment
 
 ### Frontend (Vercel/Netlify)
 ```bash
 npm run build
-# Deploy dist/ folder
+# deploy dist/
 ```
 
 ### Backend (Heroku/Railway)
 ```bash
-# Set environment variables
-# Deploy backend/ folder
+# set env vars then deploy backend/
 ```
 
-## 🤝 Contributing
-
-1. Fork the repository
+## Contributing
+1. Fork the repo
 2. Create a feature branch
 3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+4. Push and open a PR
 
-## 📄 License
+## License
+MIT
 
-This project is licensed under the MIT License.
+## Support
+Email support@snafleshub.com or open an issue.
 
-## 🆘 Support
-
-For support, email support@snafleshub.com or create an issue in the repository.
-
-## 🔄 Version History
-
-- v1.0.0 - Initial release with basic e-commerce features
-- v1.1.0 - Added vendor dashboard and management
-- v1.2.0 - Implemented negotiation system
-- v1.3.0 - Added review and rating system
-- v1.4.0 - Enhanced UI/UX and mobile responsiveness
-
----
-
-**SNAFLEShub** - Your one-stop marketplace for everything! 🛍️
+## Version History
+- v1.0.0 Initial release
+- v1.1.0 Vendor dashboard
+- v1.2.0 Negotiation system
+- v1.3.0 Reviews and ratings
+- v1.4.0 UI/UX enhancements

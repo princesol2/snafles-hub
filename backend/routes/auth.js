@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
+const crypto = require('crypto');
 
 const router = express.Router();
 
@@ -34,13 +35,19 @@ router.post('/register', [
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
+    // Generate email verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const hashedVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+
     // Create new user
     const user = new User({
       name,
       email,
       password,
       phone,
-      address
+      address,
+      emailVerificationToken: hashedVerificationToken,
+      emailVerificationExpires: new Date(Date.now() + 1000 * 60 * 60 * 24) // 24 hours
     });
 
     await user.save();
@@ -48,16 +55,27 @@ router.post('/register', [
     // Generate token
     const token = generateToken(user._id);
 
-    res.status(201).json({
-      message: 'User registered successfully',
+    // In a real app, send verification email here
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email/${verificationToken}`;
+    
+    const payload = {
+      message: 'User registered successfully. Please check your email to verify your account.',
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        emailVerified: user.emailVerified
       }
-    });
+    };
+
+    // In development, include the verification URL
+    if (process.env.NODE_ENV !== 'production') {
+      payload.verificationUrl = verificationUrl;
+    }
+
+    res.status(201).json(payload);
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ message: 'Server error during registration' });
@@ -207,6 +225,209 @@ router.post('/change-password', auth, [
   } catch (error) {
     console.error('Change password error:', error);
     res.status(500).json({ message: 'Server error during password change' });
+  }
+});
+
+// Forgot/Reset Password Routes
+// @route   POST /api/auth/forgot-password
+// @desc    Request password reset (email)
+// @access  Public
+router.post('/forgot-password', [
+  body('email').isEmail().withMessage('Valid email is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email } = req.body;
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    // Do not reveal user existence
+    if (!user) {
+      return res.json({ message: 'If that email exists, a reset link has been sent.' });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashed = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    user.passwordResetToken = hashed;
+    user.passwordResetExpires = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
+    await user.save();
+
+    const resetUrl = `${process.env.FRONTEND_URL || 'https://localhost:5173'}/reset-password/${resetToken}`;
+
+    // In a real app, send email here. For development, return a hint.
+    const payload = { message: 'Password reset link generated.' };
+    if (process.env.NODE_ENV !== 'production') {
+      payload.resetUrl = resetUrl;
+    }
+    return res.json(payload);
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Server error during password reset request' });
+  }
+});
+
+// @route   POST /api/auth/vendor-login
+// @desc    Login vendor (users with role 'vendor')
+// @access  Public
+router.post('/vendor-login', [
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+  body('password').exists().withMessage('Password is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, password } = req.body;
+
+    // Find vendor user
+    const user = await User.findOne({ email, role: 'vendor' });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid vendor credentials' });
+    }
+
+    // Check password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid vendor credentials' });
+    }
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Generate token
+    const token = generateToken(user._id);
+
+    res.json({
+      message: 'Vendor login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        loyaltyPoints: user.loyaltyPoints
+      }
+    });
+  } catch (error) {
+    console.error('Vendor login error:', error);
+    res.status(500).json({ message: 'Server error during vendor login' });
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset password using token
+// @access  Public
+router.post('/reset-password', [
+  body('token').notEmpty().withMessage('Reset token is required'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { token, password } = req.body;
+    const hashed = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      passwordResetToken: hashed,
+      passwordResetExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    return res.json({ message: 'Password has been reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error during password reset' });
+  }
+});
+
+// @route   POST /api/auth/verify-email
+// @desc    Verify email address
+// @access  Public
+router.post('/verify-email', [
+  body('token').notEmpty().withMessage('Verification token is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { token } = req.body;
+    const hashed = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      emailVerificationToken: hashed,
+      emailVerificationExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired verification token' });
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+
+    return res.json({ message: 'Email verified successfully' });
+  } catch (error) {
+    console.error('Email verification error:', error);
+    res.status(500).json({ message: 'Server error during email verification' });
+  }
+});
+
+// @route   POST /api/auth/resend-verification
+// @desc    Resend email verification
+// @access  Private
+router.post('/resend-verification', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user.emailVerified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+
+    // Generate new verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const hashedVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+
+    user.emailVerificationToken = hashedVerificationToken;
+    user.emailVerificationExpires = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 hours
+    await user.save();
+
+    // In a real app, send verification email here
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email/${verificationToken}`;
+    
+    const payload = { message: 'Verification email sent successfully' };
+    
+    // In development, include the verification URL
+    if (process.env.NODE_ENV !== 'production') {
+      payload.verificationUrl = verificationUrl;
+    }
+
+    res.json(payload);
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    res.status(500).json({ message: 'Server error during resend verification' });
   }
 });
 

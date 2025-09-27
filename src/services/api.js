@@ -1,5 +1,6 @@
 // API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Prefer proxy via Vite in dev: default to '/api' to avoid mixed-content/CORS issues
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Helper function to get auth token
 const getAuthToken = () => {
@@ -10,28 +11,75 @@ const getAuthToken = () => {
 const apiRequest = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
   const token = getAuthToken();
-  
+
+  const { silent, ...restOptions } = options || {};
+  const isFormData = restOptions?.body instanceof FormData;
+
   const config = {
+    method: restOptions.method || 'GET',
+    ...restOptions,
     headers: {
-      'Content-Type': 'application/json',
+      Accept: 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...restOptions.headers,
     },
-    ...options,
   };
 
   try {
     const response = await fetch(url, config);
-    const data = await response.json();
+    const raw = await response.text();
+    let data = {};
+    try {
+      data = raw ? JSON.parse(raw) : {};
+    } catch {
+      // Non-JSON response (e.g., proxy error page)
+      data = { message: raw };
+    }
 
     if (!response.ok) {
-      throw new Error(data.message || 'API request failed');
+      // Dev fallback: ease local demos when backend auth isn’t ready
+      const isDev = import.meta.env.DEV || import.meta.env.VITE_ALLOW_DEMO_LOGIN === 'true';
+      if (response.status === 401 && isDev) {
+        if (endpoint.startsWith('/orders')) {
+          return { orders: [] };
+        }
+      }
+      const message = data?.message || data?.error || `HTTP ${response.status}`;
+      throw new Error(message);
     }
 
     return data;
   } catch (error) {
-    console.error('API request error:', error);
+    if (!silent) console.error('API request error:', error);
     throw error;
+  }
+};
+
+// Lightweight axios-style wrapper expected by some components
+// Returns objects with a { data } shape
+export const api = {
+  get: async (endpoint) => {
+    const data = await apiRequest(endpoint, { method: 'GET' });
+    return { data };
+  },
+  post: async (endpoint, body) => {
+    const opts = body === undefined
+      ? { method: 'POST' }
+      : { method: 'POST', body: JSON.stringify(body) };
+    const data = await apiRequest(endpoint, opts);
+    return { data };
+  },
+  put: async (endpoint, body) => {
+    const opts = body === undefined
+      ? { method: 'PUT' }
+      : { method: 'PUT', body: JSON.stringify(body) };
+    const data = await apiRequest(endpoint, opts);
+    return { data };
+  },
+  delete: async (endpoint) => {
+    const data = await apiRequest(endpoint, { method: 'DELETE' });
+    return { data };
   }
 };
 
@@ -53,6 +101,21 @@ export const authAPI = {
     });
   },
 
+  // Vendor specific auth
+  vendorLogin: async (credentials) => {
+    return apiRequest('/auth/vendor-login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+      silent: true,
+    });
+  },
+  vendorRegister: async (vendorData) => {
+    return apiRequest('/auth/vendor-register', {
+      method: 'POST',
+      body: JSON.stringify(vendorData),
+    });
+  },
+
   // Get current user
   getCurrentUser: async () => {
     return apiRequest('/auth/me');
@@ -71,6 +134,53 @@ export const authAPI = {
     return apiRequest('/auth/change-password', {
       method: 'POST',
       body: JSON.stringify(passwordData),
+    });
+  },
+
+  // Verify password
+  verifyPassword: async (password) => {
+    return apiRequest('/auth/verify-password', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    });
+  },
+
+  // Request password reset
+  requestPasswordReset: async (resetData) => {
+    return apiRequest('/auth/request-password-reset', {
+      method: 'POST',
+      body: JSON.stringify(resetData),
+    });
+  },
+
+  // Forgot password (request reset link)
+  forgotPassword: async (email) => {
+    return apiRequest('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  // Reset password using token
+  resetPassword: async ({ token, password }) => {
+    return apiRequest('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
+  },
+
+  // Verify email address
+  verifyEmail: async (token) => {
+    return apiRequest('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+
+  // Resend email verification
+  resendVerification: async () => {
+    return apiRequest('/auth/resend-verification', {
+      method: 'POST',
     });
   },
 };
@@ -177,10 +287,23 @@ export const ordersAPI = {
   },
 
   // Cancel order
-  cancelOrder: async (id) => {
+  cancelOrder: async (id, reason) => {
     return apiRequest(`/orders/${id}/cancel`, {
-      method: 'PUT',
+      method: 'POST',
+      body: JSON.stringify({ reason }),
     });
+  },
+
+  // Get user orders (alias for getOrders)
+  getUserOrders: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/orders${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Track order
+  trackOrder: async (id) => {
+    // Backend provides GET /api/orders/tracking/:orderNumber
+    return apiRequest(`/orders/tracking/${id}`);
   },
 };
 
@@ -188,7 +311,7 @@ export const ordersAPI = {
 export const paymentsAPI = {
   // Create payment intent
   createPaymentIntent: async (paymentData) => {
-    return apiRequest('/payments/create-intent', {
+    return apiRequest('/payments/create-payment-intent', {
       method: 'POST',
       body: JSON.stringify(paymentData),
     });
@@ -196,7 +319,7 @@ export const paymentsAPI = {
 
   // Confirm payment
   confirmPayment: async (paymentData) => {
-    return apiRequest('/payments/confirm', {
+    return apiRequest('/payments/confirm-payment', {
       method: 'POST',
       body: JSON.stringify(paymentData),
     });
@@ -210,12 +333,246 @@ export const uploadAPI = {
     const formData = new FormData();
     formData.append('image', file);
 
-    return apiRequest('/upload/image', {
+    return apiRequest('/upload/single', {
       method: 'POST',
       headers: {
         // Don't set Content-Type, let browser set it for FormData
       },
       body: formData,
+    });
+  },
+};
+
+// Chat API
+export const chatAPI = {
+  // Get messages for a product/negotiation
+  getMessages: async (productId) => {
+    return apiRequest(`/chat/messages/${productId}`);
+  },
+
+  // Send message
+  sendMessage: async (messageData) => {
+    return apiRequest('/chat/send', {
+      method: 'POST',
+      body: JSON.stringify(messageData),
+    });
+  },
+
+  // Send offer
+  sendOffer: async (offerData) => {
+    return apiRequest('/chat/send-offer', {
+      method: 'POST',
+      body: JSON.stringify(offerData),
+    });
+  },
+};
+
+// Negotiations API
+export const negotiationsAPI = {
+  // Get user negotiations
+  getNegotiations: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/negotiations${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Get single negotiation
+  getNegotiation: async (id) => {
+    return apiRequest(`/negotiations/${id}`);
+  },
+
+  // Create negotiation
+  createNegotiation: async (negotiationData) => {
+    return apiRequest('/negotiations', {
+      method: 'POST',
+      body: JSON.stringify(negotiationData),
+    });
+  },
+
+  // Update negotiation status
+  updateNegotiationStatus: async (id, status) => {
+    return apiRequest(`/negotiations/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  },
+};
+
+// Reviews API
+export const reviewsAPI = {
+  // Get reviews for product or vendor
+  getReviews: async (type, id, params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/reviews/${type}/${id}${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Create review
+  createReview: async (reviewData) => {
+    return apiRequest('/reviews', {
+      method: 'POST',
+      body: JSON.stringify(reviewData),
+    });
+  },
+
+  // Update review
+  updateReview: async (id, reviewData) => {
+    return apiRequest(`/reviews/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(reviewData),
+    });
+  },
+
+  // Delete review
+  deleteReview: async (id) => {
+    return apiRequest(`/reviews/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Rewards API
+export const rewardsAPI = {
+  // Get user rewards/points
+  getUserRewards: async () => {
+    return apiRequest('/rewards');
+  },
+
+  // Get helper points
+  getHelperPoints: async () => {
+    return apiRequest('/rewards/helper-points');
+  },
+
+  // Redeem points
+  redeemPoints: async (redemptionData) => {
+    return apiRequest('/rewards/redeem', {
+      method: 'POST',
+      body: JSON.stringify(redemptionData),
+    });
+  },
+};
+
+// Repayment API
+export const repaymentAPI = {
+  // Get repayment plans
+  getRepaymentPlans: async () => {
+    return apiRequest('/repayment/plans');
+  },
+
+  // Create repayment plan
+  createRepaymentPlan: async (planData) => {
+    return apiRequest('/repayment/plans', {
+      method: 'POST',
+      body: JSON.stringify(planData),
+    });
+  },
+
+  // Get user repayments
+  getUserRepayments: async () => {
+    return apiRequest('/repayment/user');
+  },
+};
+
+// Vendor Analytics API
+export const vendorAnalyticsAPI = {
+  // Get dashboard analytics
+  getDashboard: async () => {
+    return apiRequest('/vendor/analytics/dashboard');
+  },
+
+  // Get products with analytics
+  getProducts: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/vendor/analytics/products${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Get orders with analytics
+  getOrders: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/vendor/analytics/orders${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Get negotiations
+  getNegotiations: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/vendor/analytics/negotiations${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Get sales report
+  getSalesReport: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/vendor/analytics/sales-report${queryString ? `?${queryString}` : ''}`);
+  },
+};
+
+// Shipping API
+export const shippingAPI = {
+  // Get available carriers
+  getCarriers: async () => {
+    return apiRequest('/shipping/carriers');
+  },
+
+  // Calculate shipping cost
+  calculateShipping: async (shippingData) => {
+    return apiRequest('/shipping/calculate', {
+      method: 'POST',
+      body: JSON.stringify(shippingData),
+    });
+  },
+
+  // Generate shipping label
+  generateLabel: async (orderId, carrier) => {
+    return apiRequest(`/shipping/label/${orderId}`, {
+      method: 'POST',
+      body: JSON.stringify({ carrier }),
+    });
+  },
+
+  // Track shipment
+  trackShipment: async (trackingNumber, carrier) => {
+    const queryString = carrier ? `?carrier=${carrier}` : '';
+    return apiRequest(`/shipping/track/${trackingNumber}${queryString}`);
+  },
+
+  // Update shipping information
+  updateShipping: async (orderId, updateData) => {
+    return apiRequest(`/shipping/update/${orderId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+  },
+};
+
+// Admin API
+export const adminAPI = {
+  // Get dashboard stats
+  getDashboardStats: async () => {
+    return apiRequest('/admin/dashboard');
+  },
+
+  // Get all users
+  getUsers: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/admin/users${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Get all vendors
+  getVendors: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/admin/vendors${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Update user status
+  updateUserStatus: async (id, status) => {
+    return apiRequest(`/admin/users/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  // Update vendor status
+  updateVendorStatus: async (id, status) => {
+    return apiRequest(`/admin/vendors/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
     });
   },
 };
@@ -234,6 +591,13 @@ export default {
   ordersAPI,
   paymentsAPI,
   uploadAPI,
+  chatAPI,
+  negotiationsAPI,
+  reviewsAPI,
+  rewardsAPI,
+  repaymentAPI,
+  vendorAnalyticsAPI,
+  shippingAPI,
+  adminAPI,
   healthAPI,
 };
-

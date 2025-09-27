@@ -3,6 +3,7 @@ const { body, query, validationResult } = require('express-validator');
 const Product = require('../models/Product');
 const Vendor = require('../models/Vendor');
 const { auth, vendorAuth } = require('../middleware/auth');
+const { adminAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -38,7 +39,7 @@ router.get('/', [
     } = req.query;
 
     // Build filter object
-    const filter = { isActive: true };
+    const filter = { isActive: true, approved: true };
     
     if (search) {
       filter.$text = { $search: search };
@@ -252,6 +253,33 @@ router.post('/:id/reviews', auth, [
   } catch (error) {
     console.error('Add review error:', error);
     res.status(500).json({ message: 'Server error while adding review' });
+  }
+});
+
+// @route   PUT /api/products/:id/approve
+// @desc    Approve or unapprove a product (Admin)
+// @access  Private (Admin)
+router.put('/:id/approve', adminAuth, [
+  body('approved').isBoolean().withMessage('approved must be boolean')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { approved } = req.body;
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { approved },
+      { new: true }
+    ).populate('vendor', 'name logo');
+
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    res.json({ message: 'Product approval status updated', product });
+  } catch (error) {
+    console.error('Approve product error:', error);
+    res.status(500).json({ message: 'Server error while updating approval' });
   }
 });
 

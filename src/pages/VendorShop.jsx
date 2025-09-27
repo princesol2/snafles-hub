@@ -46,6 +46,7 @@ const VendorShop = () => {
   }
 
   const ProductCard = ({ product }) => {
+    const placeholderImage = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop'
     const discount = product.originalPrice 
       ? Math.round((1 - product.price / product.originalPrice) * 100) 
       : 0
@@ -55,7 +56,7 @@ const VendorShop = () => {
         <Link to={`/product/${product.id}`}>
           <div className="relative">
             <img
-              src={product.image}
+              src={product.image || product.images?.[0] || placeholderImage}
               alt={product.name}
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
             />

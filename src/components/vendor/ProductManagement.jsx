@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { 
   Plus, 
   Edit, 
@@ -57,6 +58,7 @@ const ProductManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
 
   const categories = ['Jewelry', 'Decor', 'Clothing', 'Accessories', 'Home', 'Art'];
 
@@ -104,6 +106,7 @@ const ProductManagement = () => {
     }
     setShowModal(false);
     setEditingProduct(null);
+    toast.success('Product saved successfully');
   };
 
   const ProductModal = () => (
@@ -294,16 +297,25 @@ const ProductManagement = () => {
           <h3 className="text-lg font-semibold text-gray-900">Product Management</h3>
           <p className="text-sm text-gray-600">Manage your product catalog and inventory</p>
         </div>
-        <button
-          onClick={() => {
-            setEditingProduct(null);
-            setShowModal(true);
-          }}
-          className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4" />
-          Add Product
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowBulkUpload(true)}
+            className="px-4 py-2 border rounded-lg flex items-center gap-2 hover:bg-gray-50"
+          >
+            <Upload className="h-4 w-4" />
+            Bulk Upload
+          </button>
+          <button
+            onClick={() => {
+              setEditingProduct(null);
+              setShowModal(true);
+            }}
+            className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" />
+            Add Product
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -466,6 +478,45 @@ const ProductManagement = () => {
 
       {/* Product Modal */}
       {showModal && <ProductModal />}
+      {showBulkUpload && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-xl w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Bulk Upload (CSV)</h3>
+              <button onClick={() => setShowBulkUpload(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">CSV columns: name,price,stock,category,description</p>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={async (e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                const text = await file.text()
+                const lines = text.split(/\r?\n/).filter(Boolean)
+                const rows = lines.map(l => l.split(',')).filter(r => r.length >= 5)
+                const newItems = rows.map((r) => ({
+                  id: Date.now() + Math.random(),
+                  name: r[0],
+                  price: parseFloat(r[1]) || 0,
+                  stock: parseInt(r[2]) || 0,
+                  category: r[3],
+                  status: 'active',
+                  description: r.slice(4).join(',').trim(),
+                  image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=200&h=200&fit=crop',
+                  featured: false,
+                  createdAt: new Date().toISOString().split('T')[0]
+                }))
+                setProducts(prev => [...newItems, ...prev])
+                setShowBulkUpload(false)
+              }}
+              className="w-full px-4 py-3 border-2 border-dashed rounded-lg hover:bg-gray-50"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

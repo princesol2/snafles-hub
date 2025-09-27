@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart, ShoppingCart, Trash2, Star } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'
+import { api } from '../services/api'
 import toast from 'react-hot-toast'
 
 const Wishlist = () => {
@@ -9,21 +10,43 @@ const Wishlist = () => {
   const [wishlist, setWishlist] = useState([])
 
   useEffect(() => {
-    // Load wishlist from localStorage
-    const savedWishlist = JSON.parse(localStorage.getItem('snaflesWishlist') || '[]')
-    setWishlist(savedWishlist)
+    const load = async () => {
+      try {
+        const res = await api.get('/users/wishlist')
+        setWishlist(res.data?.wishlist || [])
+      } catch (e) {
+        // Fallback to localStorage if API fails
+        const saved = JSON.parse(localStorage.getItem('snaflesWishlist') || '[]')
+        setWishlist(saved)
+      }
+    }
+    load()
   }, [])
 
-  const removeFromWishlist = (productId) => {
-    const updatedWishlist = wishlist.filter(item => item.id !== productId)
+  const removeFromWishlist = async (productId) => {
+    try {
+      await api.delete(`/users/wishlist/${productId}`)
+    } catch (e) {
+      // ignore
+    }
+    const updatedWishlist = wishlist.filter(item => (item.id || item._id) !== productId)
     setWishlist(updatedWishlist)
     localStorage.setItem('snaflesWishlist', JSON.stringify(updatedWishlist))
     toast.success('Removed from wishlist')
   }
 
   const handleAddToCart = (product) => {
-    addToCart(product)
-    toast.success('Added to cart!')
+    try {
+      // Ensure product has the correct ID format
+      const productWithId = {
+        ...product,
+        id: product.id || product._id
+      }
+      addToCart(productWithId)
+      toast.success('Added to cart!')
+    } catch (error) {
+      toast.error(error.message)
+    }
   }
 
   const ProductCard = ({ product }) => {
@@ -33,7 +56,7 @@ const Wishlist = () => {
 
     return (
       <div className="group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-        <Link to={`/product/${product.id}`}>
+        <Link to={`/product/${product.id || product._id}`}>
           <div className="relative">
             <img
               src={product.image}
@@ -48,7 +71,7 @@ const Wishlist = () => {
             <button
               onClick={(e) => {
                 e.preventDefault()
-                removeFromWishlist(product.id)
+                removeFromWishlist(product.id || product._id)
               }}
               className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
             >
@@ -57,7 +80,7 @@ const Wishlist = () => {
           </div>
         </Link>
         <div className="p-4">
-          <Link to={`/product/${product.id}`}>
+          <Link to={`/product/${product.id || product._id}`}>
             <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-primary transition-colors">
               {product.name}
             </h3>
@@ -81,9 +104,9 @@ const Wishlist = () => {
             </div>
             <button
               onClick={() => handleAddToCart(product)}
-              disabled={isInCart(product.id)}
+              disabled={isInCart(product.id || product._id)}
               className={`p-2 rounded-lg transition-colors ${
-                isInCart(product.id)
+                isInCart(product.id || product._id)
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-primary text-white hover:bg-primary/90'
               }`}

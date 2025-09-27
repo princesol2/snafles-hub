@@ -1,17 +1,23 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { CreditCard, Truck, Shield, CheckCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { CreditCard, Truck, Shield, CheckCircle, ArrowLeft } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'
 import { useAuth } from '../contexts/AuthContext'
-import StripePayment from '../components/payment/StripePayment'
+import { useOrders } from '../contexts/OrderContext'
+import PaymentMethodSelector from '../components/payment/PaymentMethodSelector'
+import LoadingSpinner from '../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
 
 const Checkout = () => {
-  const { cart, getCartTotal, clearCart } = useCart()
+  const { cart, getCartTotal, clearCart, addToCart } = useCart()
   const { user } = useAuth()
+  const { createOrder, processPayment, confirmPayment } = useOrders()
   const navigate = useNavigate()
+  const location = useLocation()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [processingPayment, setProcessingPayment] = useState(false)
+  const [directProduct, setDirectProduct] = useState(null)
 
   const [shippingInfo, setShippingInfo] = useState({
     firstName: user?.name?.split(' ')[0] || '',
@@ -33,7 +39,23 @@ const Checkout = () => {
     nameOnCard: ''
   })
 
-  const subtotal = getCartTotal()
+  // Handle direct product purchase
+  useEffect(() => {
+    if (location.state?.product) {
+      setDirectProduct(location.state.product)
+      // Don't add to cart for direct purchase - handle separately
+    }
+  }, [location.state])
+
+  // Calculate totals - handle both cart items and direct product purchase
+  const getSubtotal = () => {
+    if (directProduct) {
+      return directProduct.price * (directProduct.quantity || 1)
+    }
+    return getCartTotal()
+  }
+  
+  const subtotal = getSubtotal()
   const shipping = subtotal > 999 ? 0 : 99
   const tax = Math.round(subtotal * 0.18)
   const total = subtotal + shipping + tax
@@ -54,39 +76,74 @@ const Checkout = () => {
 
   const handlePlaceOrder = async () => {
     setLoading(true)
+    setProcessingPayment(true)
     
-    // Simulate order processing
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // Generate order ID
-    const orderId = `ORD-${Date.now()}`
-    
-    // Create order object
-    const order = {
-      id: orderId,
-      items: cart,
-      shipping: shippingInfo,
-      payment: paymentInfo,
-      total,
-      status: 'Processing',
-      createdAt: new Date().toISOString(),
-      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    try {
+      // Create order data - handle both cart items and direct product purchase
+      // Backend expects { product: productId, quantity: number } format
+      const orderItems = directProduct 
+        ? [{
+            product: directProduct.id || directProduct._id,
+            quantity: directProduct.quantity || 1
+          }]
+        : cart.map(item => ({
+            product: item.id,
+            quantity: item.quantity
+          }))
+
+      const orderData = {
+        items: orderItems,
+        shipping: shippingInfo,
+        payment: paymentInfo,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email
+        }
+      }
+
+      // Create the order
+      const orderResponse = await createOrder(orderData)
+      const order = orderResponse.order
+
+      // Process payment
+      const paymentResponse = await processPayment(order.id, {
+        method: paymentInfo.method,
+        amount: total,
+        ...paymentInfo
+      })
+
+      // Simulate payment confirmation (in real app, this would be handled by payment gateway)
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Confirm payment
+      await confirmPayment(paymentResponse.paymentIntentId)
+
+      // Clear cart only if not a direct product purchase
+      if (!directProduct) {
+        clearCart()
+      }
+      
+      setLoading(false)
+      setProcessingPayment(false)
+      setStep(3)
+      
+      toast.success('Order placed successfully!')
+      
+      // Redirect to order success page after a short delay
+      setTimeout(() => {
+        navigate(`/order-success/${order.id}`)
+      }, 2000)
+      
+    } catch (error) {
+      setLoading(false)
+      setProcessingPayment(false)
+      toast.error(error.message || 'Failed to place order. Please try again.')
+      console.error('Order placement error:', error)
     }
-    
-    // Save order to localStorage
-    const orders = JSON.parse(localStorage.getItem('snaflesOrders') || '[]')
-    orders.push(order)
-    localStorage.setItem('snaflesOrders', JSON.stringify(orders))
-    
-    // Clear cart
-    clearCart()
-    
-    setLoading(false)
-    setStep(3)
-    toast.success('Order placed successfully!')
   }
 
-  if (cart.length === 0) {
+  if (cart.length === 0 && !directProduct) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -260,101 +317,20 @@ const Checkout = () => {
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Payment Information</h2>
                   
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Payment Method
-                    </label>
-                    <div className="space-y-3">
-                      <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                        <input
-                          type="radio"
-                          name="method"
-                          value="card"
-                          checked={paymentInfo.method === 'card'}
-                          onChange={handlePaymentChange}
-                          className="mr-3"
-                        />
-                        <CreditCard size={20} className="mr-3" />
-                        <span>Credit/Debit Card</span>
-                      </label>
-                      <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                        <input
-                          type="radio"
-                          name="method"
-                          value="upi"
-                          checked={paymentInfo.method === 'upi'}
-                          onChange={handlePaymentChange}
-                          className="mr-3"
-                        />
-                        <span>UPI</span>
-                      </label>
-                      <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                        <input
-                          type="radio"
-                          name="method"
-                          value="cod"
-                          checked={paymentInfo.method === 'cod'}
-                          onChange={handlePaymentChange}
-                          className="mr-3"
-                        />
-                        <Truck size={20} className="mr-3" />
-                        <span>Cash on Delivery</span>
-                      </label>
-                    </div>
-                  </div>
 
-                  {paymentInfo.method === 'card' && (
-                    <StripePayment
-                      amount={total}
-                      onSuccess={(paymentIntent) => {
-                        console.log('Payment successful:', paymentIntent);
-                        handlePlaceOrder();
-                      }}
-                      onError={(error) => {
-                        console.error('Payment failed:', error);
-                        toast.error('Payment failed. Please try again.');
-                      }}
-                      orderId={`ORD-${Date.now()}`}
-                    />
-                  )}
+                  <PaymentMethodSelector
+                    amount={total}
+                    onSuccess={(paymentData) => {
+                      console.log('Payment successful:', paymentData);
+                      handlePlaceOrder();
+                    }}
+                    onError={(error) => {
+                      console.error('Payment failed:', error);
+                      toast.error('Payment failed. Please try again.');
+                    }}
+                    orderId={`ORD-${Date.now()}`}
+                  />
 
-                  {paymentInfo.method === 'upi' && (
-                    <div className="space-y-4">
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h4 className="font-medium text-blue-900 mb-2">UPI Payment</h4>
-                        <p className="text-sm text-blue-800">
-                          You will be redirected to your UPI app to complete the payment.
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-center">
-                          <div className="text-2xl mb-2">📱</div>
-                          <div className="text-sm font-medium">PhonePe</div>
-                        </button>
-                        <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-center">
-                          <div className="text-2xl mb-2">📱</div>
-                          <div className="text-sm font-medium">Google Pay</div>
-                        </button>
-                        <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-center">
-                          <div className="text-2xl mb-2">📱</div>
-                          <div className="text-sm font-medium">Paytm</div>
-                        </button>
-                        <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-center">
-                          <div className="text-2xl mb-2">📱</div>
-                          <div className="text-sm font-medium">BHIM</div>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {paymentInfo.method === 'cod' && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <h4 className="font-medium text-green-900 mb-2">Cash on Delivery</h4>
-                      <p className="text-sm text-green-800">
-                        Pay with cash when your order is delivered. An additional ₹50 COD charge applies.
-                      </p>
-                    </div>
-                  )}
 
                   <div className="flex space-x-4 mt-6">
                     <button
@@ -365,10 +341,19 @@ const Checkout = () => {
                     </button>
                     <button
                       onClick={handlePlaceOrder}
-                      disabled={loading}
+                      disabled={loading || processingPayment}
                       className="flex-1 btn btn-primary py-3"
                     >
-                      {loading ? 'Processing...' : 'Place Order'}
+                      {processingPayment ? (
+                        <span className="flex items-center justify-center space-x-2">
+                          <LoadingSpinner size="sm" color="white" />
+                          <span>Processing Payment...</span>
+                        </span>
+                      ) : loading ? (
+                        'Creating Order...'
+                      ) : (
+                        'Place Order'
+                      )}
                     </button>
                   </div>
                 </div>
@@ -376,8 +361,14 @@ const Checkout = () => {
 
               {step === 3 && (
                 <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-                  <div className="text-green-500 mb-4">
-                    <CheckCircle size={64} className="mx-auto" />
+                  <div className="text-green-500 mb-4 relative overflow-x-hidden h-20">
+                    <CheckCircle size={48} className="mx-auto mb-2" />
+                    <div className="absolute left-0 right-0 top-10">
+                      <div className="inline-flex items-center space-x-2 truck-animate">
+                        <Truck size={28} className="text-blue-600" />
+                        <span className="text-sm text-gray-600">Your order is on its way!</span>
+                      </div>
+                    </div>
                   </div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">Order Confirmed!</h2>
                   <p className="text-gray-600 mb-6">
@@ -407,7 +398,15 @@ const Checkout = () => {
                 <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
                 
                 <div className="space-y-4">
-                  {cart.map((item) => (
+                  {(directProduct ? [{
+                    id: directProduct.id,
+                    name: directProduct.name,
+                    price: directProduct.price,
+                    image: directProduct.image || directProduct.images?.[0],
+                    quantity: directProduct.quantity || 1,
+                    vendor: directProduct.vendor?.name || directProduct.vendor || 'SNAFLEShub',
+                    category: directProduct.category
+                  }] : cart).map((item) => (
                     <div key={item.id} className="flex items-center space-x-3">
                       <img
                         src={item.image}

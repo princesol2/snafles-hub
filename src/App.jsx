@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 import { ProductProvider } from './contexts/ProductContext'
+import { OrderProvider } from './contexts/OrderContext'
 
 // Layout Components
 import Navbar from './components/layout/Navbar'
@@ -19,7 +20,11 @@ import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import Orders from './pages/Orders'
 import Profile from './pages/Profile'
+import ProfileSettings from './pages/ProfileSettings'
+import Settings from './pages/Settings'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import Wishlist from './pages/Wishlist'
 
 // Vendor Pages
@@ -37,53 +42,162 @@ import Negotiations from './pages/Negotiations'
 // Review Pages
 import Reviews from './pages/Reviews'
 import VendorProfile from './pages/VendorProfile'
+import VerifyEmail from './pages/VerifyEmail'
+import ShoppingMascotDemo from './pages/ShoppingMascotDemo'
+import OrderSuccess from './pages/OrderSuccess'
+import OrderTracking from './pages/OrderTracking'
+import Refund from './pages/Refund'
+import Exchange from './pages/Exchange'
+import AuthGuard from './components/routing/AuthGuard'
+import NotFound from './pages/NotFound'
 
 function App() {
   console.log('App component rendering...')
   
   return (
     <Router>
-      <AuthProvider>
-        <CartProvider>
-          <ProductProvider>
-            <div className="min-h-screen bg-gray-50">
+        <AuthProvider>
+          <CartProvider>
+            <ProductProvider>
+              <OrderProvider>
+              <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-100">
               <Navbar />
-              <main>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/products" element={<Products />} />
-                  <Route path="/product/:id" element={<ProductDetail />} />
-                  <Route path="/vendors" element={<Vendors />} />
-                  <Route path="/vendor/:id" element={<VendorShop />} />
-                  <Route path="/cart" element={<Cart />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/orders" element={<Orders />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/wishlist" element={<Wishlist />} />
-                  <Route path="/negotiations" element={<Negotiations />} />
-                  <Route path="/reviews" element={<Reviews />} />
+                  <main>
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/forgot-password" element={<ForgotPassword />} />
+                      <Route path="/reset-password/:token" element={<ResetPassword />} />
+                      <Route path="/verify-email/:token" element={<VerifyEmail />} />
+                      
+                      {/* Guest Allowed Routes - Can browse without login */}
+                      <Route path="/products" element={
+                        <AuthGuard requireAuth={false} guestAllowed={true}>
+                          <Products />
+                        </AuthGuard>
+                      } />
+                      <Route path="/product/:id" element={
+                        <AuthGuard requireAuth={false} guestAllowed={true}>
+                          <ProductDetail />
+                        </AuthGuard>
+                      } />
+                      <Route path="/vendors" element={
+                        <AuthGuard requireAuth={true}>
+                          <Vendors />
+                        </AuthGuard>
+                      } />
+                      <Route path="/vendor/:id" element={
+                        <AuthGuard requireAuth={true}>
+                          <VendorShop />
+                        </AuthGuard>
+                      } />
+                      <Route path="/cart" element={
+                        <AuthGuard requireAuth={false} guestAllowed={true}>
+                          <Cart />
+                        </AuthGuard>
+                      } />
+                      <Route path="/checkout" element={
+                        <AuthGuard requireAuth={true}>
+                          <Checkout />
+                        </AuthGuard>
+                      } />
+                      <Route path="/orders" element={
+                        <AuthGuard requireAuth={true}>
+                          <Orders />
+                        </AuthGuard>
+                      } />
+                      <Route path="/order-success/:orderId" element={
+                        <AuthGuard requireAuth={true}>
+                          <OrderSuccess />
+                        </AuthGuard>
+                      } />
+                      <Route path="/track-order" element={<OrderTracking />} />
+                      <Route path="/track-order/:orderId" element={<OrderTracking />} />
+                      <Route path="/refund" element={
+                        <AuthGuard requireAuth={true}>
+                          <Refund />
+                        </AuthGuard>
+                      } />
+                      <Route path="/exchange" element={
+                        <AuthGuard requireAuth={true}>
+                          <Exchange />
+                        </AuthGuard>
+                      } />
+                      <Route path="/profile" element={
+                        <AuthGuard requireAuth={true}>
+                          <Profile />
+                        </AuthGuard>
+                      } />
+                      <Route path="/profile-settings" element={
+                        <AuthGuard requireAuth={true}>
+                          <ProfileSettings />
+                        </AuthGuard>
+                      } />
+                      <Route path="/settings" element={
+                        <AuthGuard requireAuth={true}>
+                          <Settings />
+                        </AuthGuard>
+                      } />
+                      <Route path="/wishlist" element={
+                        <AuthGuard requireAuth={true}>
+                          <Wishlist />
+                        </AuthGuard>
+                      } />
+                      <Route path="/negotiations" element={
+                        <AuthGuard requireAuth={true}>
+                          <Negotiations />
+                        </AuthGuard>
+                      } />
+                      <Route path="/reviews" element={
+                        <AuthGuard requireAuth={true}>
+                          <Reviews />
+                        </AuthGuard>
+                      } />
+                      <Route path="/reviews/:type/:id" element={
+                        <AuthGuard requireAuth={true}>
+                          <Reviews />
+                        </AuthGuard>
+                      } />
                   
                   {/* Vendor Routes */}
-                  <Route path="/vendor-dashboard" element={<VendorDashboard />} />
+                  <Route path="/vendor-dashboard" element={
+                    <AuthGuard requireAuth={true} allowedRoles={['vendor', 'admin']}>
+                      <VendorDashboard />
+                    </AuthGuard>
+                  } />
                   <Route path="/vendor-login" element={<VendorLogin />} />
                   <Route path="/vendor-register" element={<VendorRegister />} />
-                  <Route path="/vendor-profile" element={<VendorProfile />} />
+                  <Route path="/vendor/:id/profile" element={
+                    <AuthGuard requireAuth={true}>
+                      <VendorProfile />
+                    </AuthGuard>
+                  } />
                   
                   {/* Admin Routes */}
-                  <Route path="/admin-dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin-dashboard" element={
+                    <AuthGuard requireAuth={true} allowedRoles={['admin']}>
+                      <AdminDashboard />
+                    </AuthGuard>
+                  } />
                   <Route path="/admin-login" element={<AdminLogin />} />
-                </Routes>
+                  
+                  {/* Demo Routes */}
+                  <Route path="/shopping-mascot-demo" element={<ShoppingMascotDemo />} />
+                  
+                  <Route path="*" element={<NotFound />} />
++
++                </Routes>
               </main>
               <Footer />
               <Toaster position="top-right" />
-            </div>
-          </ProductProvider>
-        </CartProvider>
-      </AuthProvider>
+              </div>
+              </OrderProvider>
+            </ProductProvider>
+          </CartProvider>
+        </AuthProvider>
     </Router>
-  )
-}
+    )
+  }
 
 export default App
 

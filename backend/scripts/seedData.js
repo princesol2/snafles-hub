@@ -37,7 +37,7 @@ const seedUsers = async () => {
     {
       name: 'Test User',
       email: 'testexample@gmail.com',
-      password: '123',
+      password: 'test123',
       phone: '+1 (555) 987-6543',
       address: {
         street: '456 Test Avenue',
@@ -45,6 +45,25 @@ const seedUsers = async () => {
         state: 'NY',
         zipCode: '10001',
         country: 'US'
+      },
+      loyaltyPoints: 0,
+      preferences: {
+        newsletter: false,
+        smsNotifications: false
+      }
+    },
+    {
+      name: 'Vendor User',
+      email: 'vendor@snafles.com',
+      password: 'vendor123',
+      role: 'vendor',
+      phone: '+91 98765 43210',
+      address: {
+        street: '123 Artisan Street',
+        city: 'Mumbai',
+        state: 'Maharashtra',
+        zipCode: '400001',
+        country: 'India'
       },
       loyaltyPoints: 0,
       preferences: {
@@ -133,6 +152,44 @@ const seedVendors = async () => {
         website: 'https://creativehomestudio.com'
       },
       isVerified: true
+    },
+    {
+      name: 'Bani Makeover',
+      description: 'Curated accessories and artistic pieces crafted to elevate your style and space.',
+      logo: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?w=200&h=200&fit=crop',
+      banner: 'https://images.unsplash.com/photo-1515387784663-e2edd2dc3f0b?w=1200&h=400&fit=crop',
+      location: 'Pune, India',
+      categories: ['Accessories', 'Art'],
+      rating: 4.7,
+      reviews: 0,
+      contact: {
+        email: 'hello@banimakeover.com',
+        phone: '+91 90000 12345',
+        website: 'https://banimakeover.example.com',
+        socialMedia: {
+          instagram: '@banimakeover'
+        }
+      },
+      isVerified: true
+    },
+    {
+      name: 'Baani Makeovers',
+      description: 'Professional bridal and party makeup with a focus on natural, long-lasting looks.',
+      logo: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=200&h=200&fit=crop',
+      banner: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&h=400&fit=crop',
+      location: 'Gurugram, India',
+      categories: ['Accessories', 'Art'],
+      rating: 4.9,
+      reviews: 312,
+      contact: {
+        email: 'hello@baanimakeovers.in',
+        phone: '+91 98765 43210',
+        website: 'https://baanimakeovers.in',
+        socialMedia: {
+          instagram: '@baanimakeovers'
+        }
+      },
+      isVerified: true
     }
   ];
 
@@ -154,6 +211,7 @@ const seedProducts = async () => {
     console.log('No vendors found. Please seed vendors first.');
     return;
   }
+  const baniVendor = vendors.find(v => v.name === 'Bani Makeover');
 
   const products = [
     {
@@ -257,6 +315,39 @@ const seedProducts = async () => {
       reviews: 67,
       featured: false,
       tags: ['leather', 'handbag', 'embroidery', 'handcrafted']
+    },
+    // Bani Makeover products (Accessories/Art)
+    {
+      name: 'Floral Hair Accessory Set',
+      description: 'Handcrafted floral hair clips set for special occasions.',
+      detailedDescription: 'A curated set of three handcrafted floral hair clips made with premium materials. Perfect for bridal looks and festive outfits.',
+      price: 1499,
+      images: [
+        'https://images.unsplash.com/photo-1512203492609-8f8e1b5b8d1e?w=800&h=600&fit=crop'
+      ],
+      category: 'Accessories',
+      vendor: (baniVendor && baniVendor._id) || vendors[0]._id,
+      stock: 40,
+      rating: 4.6,
+      reviews: 12,
+      featured: true,
+      tags: ['floral', 'hair', 'accessory', 'handcrafted']
+    },
+    {
+      name: 'Minimalist Wall Art Print',
+      description: 'Premium matte art print to refresh your interiors.',
+      detailedDescription: 'A minimalist art print on premium matte paper. Adds an elegant touch to living rooms and studios alike.',
+      price: 999,
+      images: [
+        'https://images.unsplash.com/photo-1504196606672-aef5c9cefc92?w=800&h=600&fit=crop'
+      ],
+      category: 'Art',
+      vendor: (baniVendor && baniVendor._id) || vendors[0]._id,
+      stock: 60,
+      rating: 4.5,
+      reviews: 8,
+      featured: false,
+      tags: ['art', 'print', 'minimalist']
     }
   ];
 

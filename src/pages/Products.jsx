@@ -3,21 +3,38 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { Search, Filter, Grid, List, Star, ShoppingCart, Heart } from 'lucide-react'
 import { useProducts } from '../contexts/ProductContext'
 import { useCart } from '../contexts/CartContext'
+import { useAuth } from '../contexts/AuthContext'
+import { api } from '../services/api'
 import toast from 'react-hot-toast'
 
 const Products = () => {
   const { products, loading, searchProducts } = useProducts()
   const { addToCart, isInCart } = useCart()
+  const { user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [viewMode, setViewMode] = useState('grid')
   const [sortBy, setSortBy] = useState('name')
   const [priceRange, setPriceRange] = useState([0, 10000])
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [filteredProducts, setFilteredProducts] = useState([])
+  const [wishlisted, setWishlisted] = useState(new Set())
 
   const searchQuery = searchParams.get('search') || ''
   const categoryFilter = searchParams.get('category') || ''
   const filterType = searchParams.get('filter') || ''
+
+  useEffect(() => {
+    // Load wishlist ids from backend to toggle heart state
+    (async () => {
+      try {
+        const res = await api.get('/users/wishlist')
+        const ids = new Set((res.data?.wishlist || []).map((p) => p.id || p._id))
+        setWishlisted(ids)
+      } catch (e) {
+        // ignore
+      }
+    })()
+  }, [])
 
   useEffect(() => {
     let filtered = products
@@ -86,6 +103,14 @@ const Products = () => {
   const categories = ['all', 'Jewelry', 'Decor', 'Clothing', 'Accessories']
 
   const handleAddToCart = (product) => {
+    if (!user) {
+      toast('Please sign in to add items to your cart', {
+        icon: '🔐',
+        duration: 3000,
+      })
+      return
+    }
+    
     addToCart(product)
     toast.success('Added to cart!')
   }
@@ -95,42 +120,61 @@ const Products = () => {
       ? Math.round((1 - product.price / product.originalPrice) * 100) 
       : 0
 
+    const placeholderImage = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop'
+
+    const addToWishlist = async () => {
+      try {
+        await api.post('/users/wishlist', { productId: product.id })
+        setWishlisted((prev) => new Set([...Array.from(prev), product.id]))
+        toast.success('Added to wishlist')
+      } catch (e) {
+        toast.error(e?.message || 'Failed to add to wishlist')
+      }
+    }
+
     return (
-      <div className="group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-        <Link to={`/product/${product.id}`}>
-          <div className="relative">
+      <div className="group card-premium hover-lift overflow-hidden">
+        <div className="relative">
+          <Link to={`/product/${product.id}`}>
             <img
-              src={product.image}
+              src={product.image || product.images?.[0] || placeholderImage}
               alt={product.name}
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
             />
-            {discount > 0 && (
-              <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-                -{discount}%
-              </div>
-            )}
-            <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
-              <Heart size={16} className="text-gray-600" />
-            </button>
-          </div>
-        </Link>
-        <div className="p-4">
+          </Link>
+          {discount > 0 && (
+            <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-md">
+              -{discount}%
+            </div>
+          )}
+          <button
+            aria-label="Add to wishlist"
+            onClick={(e) => { e.preventDefault(); addToWishlist(); }}
+            className={`absolute top-3 right-3 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 ${
+              wishlisted.has(product.id) ? 'bg-red-500 text-white' : 'bg-white/90 backdrop-blur-sm'
+            }`}
+            title={wishlisted.has(product.id) ? 'In wishlist' : 'Add to wishlist'}
+          >
+            <Heart size={16} className={wishlisted.has(product.id) ? 'text-white' : 'text-gray-600'} />
+          </button>
+        </div>
+        <div className="p-6">
           <Link to={`/product/${product.id}`}>
-            <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-primary transition-colors">
+            <h3 className="heading-4 mb-3 line-clamp-2 hover:text-navy-600 transition-colors">
               {product.name}
             </h3>
           </Link>
-          <div className="flex items-center mb-2">
-            <div className="flex text-yellow-400">
+          <div className="flex items-center mb-3">
+            <div className="flex text-gold-500">
               {[...Array(5)].map((_, i) => (
                 <Star key={i} size={14} fill={i < Math.floor(product.rating || 4) ? 'currentColor' : 'none'} />
               ))}
             </div>
-            <span className="text-sm text-gray-500 ml-2">({product.reviews || 0})</span>
+            <span className="text-sm text-gray-600 ml-2">({product.reviews || 0})</span>
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-lg font-bold text-primary">₹{product.price.toLocaleString()}</span>
+              <span className="text-lg font-bold text-navy-600">₹{product.price.toLocaleString()}</span>
               {product.originalPrice && (
                 <span className="text-sm text-gray-500 line-through ml-2">
                   ₹{product.originalPrice.toLocaleString()}
@@ -140,10 +184,10 @@ const Products = () => {
             <button
               onClick={() => handleAddToCart(product)}
               disabled={isInCart(product.id)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-2 rounded-lg transition-all duration-300 ${
                 isInCart(product.id)
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-primary text-white hover:bg-primary/90'
+                  : 'btn btn-primary hover:scale-110'
               }`}
             >
               <ShoppingCart size={16} />
@@ -159,34 +203,36 @@ const Products = () => {
       ? Math.round((1 - product.price / product.originalPrice) * 100) 
       : 0
 
+    const placeholderImage = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop'
+
     return (
-      <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6">
+      <div className="card-premium hover-lift p-6">
         <div className="flex gap-6">
           <Link to={`/product/${product.id}`} className="flex-shrink-0">
             <img
-              src={product.image}
+              src={product.image || product.images?.[0] || placeholderImage}
               alt={product.name}
-              className="w-32 h-32 object-cover rounded-lg"
+              className="w-32 h-32 object-cover rounded-xl"
             />
           </Link>
           <div className="flex-1">
             <Link to={`/product/${product.id}`}>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2 hover:text-primary transition-colors">
+              <h3 className="heading-4 mb-3 hover:text-navy-600 transition-colors">
                 {product.name}
               </h3>
             </Link>
             <p className="text-gray-600 mb-4 line-clamp-2">{product.description}</p>
             <div className="flex items-center mb-4">
-              <div className="flex text-yellow-400">
+              <div className="flex text-gold-500">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} size={16} fill={i < Math.floor(product.rating || 4) ? 'currentColor' : 'none'} />
                 ))}
               </div>
-              <span className="text-sm text-gray-500 ml-2">({product.reviews || 0} reviews)</span>
+              <span className="text-sm text-gray-600 ml-2">({product.reviews || 0} reviews)</span>
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-2xl font-bold text-primary">₹{product.price.toLocaleString()}</span>
+                <span className="text-2xl font-bold text-navy-600">₹{product.price.toLocaleString()}</span>
                 {product.originalPrice && (
                   <span className="text-lg text-gray-500 line-through ml-2">
                     ₹{product.originalPrice.toLocaleString()}
@@ -199,10 +245,10 @@ const Products = () => {
               <button
                 onClick={() => handleAddToCart(product)}
                 disabled={isInCart(product.id)}
-                className={`px-6 py-2 rounded-lg transition-colors ${
+                className={`px-6 py-2 rounded-lg transition-all duration-300 ${
                   isInCart(product.id)
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-primary text-white hover:bg-primary/90'
+                    : 'btn btn-primary'
                 }`}
               >
                 {isInCart(product.id) ? 'In Cart' : 'Add to Cart'}
@@ -216,26 +262,27 @@ const Products = () => {
 
   if (loading) {
     return (
-      <div className="container py-16">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-pink-50/30 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-navy-500 mx-auto"></div>
+          <p className="mt-4 text-gray-700 text-lg font-semibold">Loading products...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-pink-50/30 to-gray-100">
       <div className="container py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+        <div className="mb-12">
+          <h1 className="heading-2 mb-4">
             {searchQuery ? `Search Results for "${searchQuery}"` : 
              categoryFilter ? `${categoryFilter} Products` :
              filterType ? `${filterType.charAt(0).toUpperCase() + filterType.slice(1)} Products` :
              'All Products'}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-700 text-lg">
             {filteredProducts.length} products found
           </p>
         </div>

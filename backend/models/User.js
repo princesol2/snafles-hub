@@ -38,6 +38,14 @@ const userSchema = new mongoose.Schema({
     enum: ['customer', 'vendor', 'admin'],
     default: 'customer'
   },
+  paymentVerified: {
+    type: Boolean,
+    default: false
+  },
+  walletBalance: {
+    type: Number,
+    default: 0
+  },
   isActive: {
     type: Boolean,
     default: true
@@ -45,6 +53,23 @@ const userSchema = new mongoose.Schema({
   loyaltyPoints: {
     type: Number,
     default: 0
+  },
+  redeemedRewards: [{
+    rewardId: String,
+    name: String,
+    type: String,
+    pointsCost: Number,
+    redeemedAt: { type: Date, default: Date.now }
+  }],
+  wishlist: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Product'
+  }],
+  repaymentSettings: {
+    autoRepay: { type: Boolean, default: false },
+    maxAmount: { type: Number, default: 0 },
+    preferredMethod: { type: String, enum: ['card', 'bank', 'wallet'], default: 'card' },
+    notificationDays: { type: Number, default: 3 }
   },
   preferences: {
     newsletter: {
@@ -58,7 +83,39 @@ const userSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
-  }
+  },
+  passwordResetToken: {
+    type: String,
+  },
+  passwordResetExpires: {
+    type: Date,
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerificationToken: {
+    type: String,
+  },
+  emailVerificationExpires: {
+    type: Date,
+  },
+  isBanned: {
+    type: Boolean,
+    default: false
+  },
+  statusHistory: [{
+    status: String,
+    reason: String,
+    changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    changedAt: { type: Date, default: Date.now }
+  }],
+  verificationHistory: [{
+    isVerified: Boolean,
+    reason: String,
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    verifiedAt: { type: Date, default: Date.now }
+  }]
 }, {
   timestamps: true
 });

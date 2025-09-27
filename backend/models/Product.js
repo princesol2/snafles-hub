@@ -83,6 +83,20 @@ const productSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  approved: {
+    type: Boolean,
+    default: true
+  },
+  negotiable: {
+    type: Boolean,
+    default: true
+  },
+  minOfferRatio: {
+    type: Number,
+    default: 0.9,
+    min: 0.1,
+    max: 1
   }
 }, {
   timestamps: true
@@ -94,5 +108,7 @@ productSchema.index({ category: 1 });
 productSchema.index({ vendor: 1 });
 productSchema.index({ featured: 1 });
 productSchema.index({ price: 1 });
+productSchema.index({ approved: 1 });
+productSchema.index({ negotiable: 1 });
 
 module.exports = mongoose.model('Product', productSchema);

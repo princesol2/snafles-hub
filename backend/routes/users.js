@@ -81,20 +81,19 @@ router.post('/wishlist', auth, [
     }
 
     const { productId } = req.body;
-
-    // Check if product exists
     const Product = require('../models/Product');
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    // Add to wishlist (implement wishlist logic here)
-    // For now, just return success
-    res.json({
-      message: 'Product added to wishlist',
-      productId
-    });
+    // Avoid duplicates
+    const exists = (req.user.wishlist || []).some(p => p.toString() === productId);
+    if (!exists) {
+      await User.findByIdAndUpdate(req.user._id, { $addToSet: { wishlist: productId } });
+    }
+
+    res.json({ message: 'Product added to wishlist' });
   } catch (error) {
     console.error('Add to wishlist error:', error);
     res.status(500).json({ message: 'Server error while adding to wishlist' });
@@ -107,13 +106,8 @@ router.post('/wishlist', auth, [
 router.delete('/wishlist/:productId', auth, async (req, res) => {
   try {
     const { productId } = req.params;
-
-    // Remove from wishlist (implement wishlist logic here)
-    // For now, just return success
-    res.json({
-      message: 'Product removed from wishlist',
-      productId
-    });
+    await User.findByIdAndUpdate(req.user._id, { $pull: { wishlist: productId } });
+    res.json({ message: 'Product removed from wishlist' });
   } catch (error) {
     console.error('Remove from wishlist error:', error);
     res.status(500).json({ message: 'Server error while removing from wishlist' });
@@ -121,15 +115,28 @@ router.delete('/wishlist/:productId', auth, async (req, res) => {
 });
 
 // @route   GET /api/users/wishlist
-// @desc    Get user wishlist
+// @desc    Get user wishlist populated with product data
 // @access  Private
 router.get('/wishlist', auth, async (req, res) => {
   try {
-    // Get wishlist (implement wishlist logic here)
-    // For now, return empty array
-    res.json({
-      wishlist: []
+    const user = await User.findById(req.user._id).populate({
+      path: 'wishlist',
+      match: { isActive: true },
+      select: 'name price originalPrice images rating reviews category vendor'
     });
+
+    const wishlist = (user.wishlist || []).map(p => ({
+      id: p._id,
+      name: p.name,
+      price: p.price,
+      originalPrice: p.originalPrice,
+      image: Array.isArray(p.images) && p.images.length ? p.images[0] : undefined,
+      rating: p.rating,
+      reviews: p.reviews,
+      category: p.category,
+    }));
+
+    res.json({ wishlist });
   } catch (error) {
     console.error('Get wishlist error:', error);
     res.status(500).json({ message: 'Server error while fetching wishlist' });
@@ -207,6 +214,91 @@ router.get('/', adminAuth, async (req, res) => {
   }
 });
 
+// @route   DELETE /api/users/:id
+// @desc    Delete a user (Admin only)
+// @access  Private (Admin)
+router.delete('/:id', adminAuth, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    // TODO: cascade clean-up if needed (orders, etc.)
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ message: 'Server error while deleting user' });
+  }
+});
+
+// Account deletion requests
+const AccountDeletionRequest = require('../models/AccountDeletionRequest');
+
+// @route   POST /api/users/request-deletion
+// @desc    Create account deletion request (user)
+// @access  Private
+router.post('/request-deletion', auth, [
+  body('reason').optional().isLength({ min: 5 }).withMessage('Reason must be at least 5 characters')
+], async (req, res) => {
+  try {
+    const existing = await AccountDeletionRequest.findOne({ user: req.user._id, status: 'pending' });
+    if (existing) return res.status(400).json({ message: 'A pending request already exists' });
+
+    const request = await AccountDeletionRequest.create({ user: req.user._id, reason: req.body.reason });
+    res.status(201).json({ message: 'Deletion request submitted', request });
+  } catch (error) {
+    console.error('Create deletion request error:', error);
+    res.status(500).json({ message: 'Server error while creating deletion request' });
+  }
+});
+
+// @route   GET /api/users/deletion-requests
+// @desc    List deletion requests (Admin)
+// @access  Private (Admin)
+router.get('/deletion-requests', adminAuth, async (req, res) => {
+  try {
+    const requests = await AccountDeletionRequest.find().populate('user', 'name email role');
+    res.json({ requests });
+  } catch (error) {
+    console.error('List deletion requests error:', error);
+    res.status(500).json({ message: 'Server error while listing deletion requests' });
+  }
+});
+
+// @route   POST /api/users/deletion-requests/:id/approve
+// @desc    Approve deletion request and delete user (Admin)
+// @access  Private (Admin)
+router.post('/deletion-requests/:id/approve', adminAuth, async (req, res) => {
+  try {
+    const request = await AccountDeletionRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Request not found' });
+    request.status = 'approved';
+    request.processedBy = req.user._id;
+    request.processedAt = new Date();
+    await request.save();
+    await User.findByIdAndDelete(request.user);
+    res.json({ message: 'Account deletion approved and user deleted' });
+  } catch (error) {
+    console.error('Approve deletion request error:', error);
+    res.status(500).json({ message: 'Server error while approving deletion request' });
+  }
+});
+
+// @route   POST /api/users/deletion-requests/:id/reject
+// @desc    Reject deletion request (Admin)
+// @access  Private (Admin)
+router.post('/deletion-requests/:id/reject', adminAuth, async (req, res) => {
+  try {
+    const request = await AccountDeletionRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Request not found' });
+    request.status = 'rejected';
+    request.processedBy = req.user._id;
+    request.processedAt = new Date();
+    await request.save();
+    res.json({ message: 'Account deletion request rejected' });
+  } catch (error) {
+    console.error('Reject deletion request error:', error);
+    res.status(500).json({ message: 'Server error while rejecting deletion request' });
+  }
+});
 // @route   PUT /api/users/:id/status
 // @desc    Update user status (Admin only)
 // @access  Private (Admin)

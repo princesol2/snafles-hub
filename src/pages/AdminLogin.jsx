@@ -26,23 +26,12 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      // Simulate API call - replace with actual admin login API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, check if it's an admin email
-      if (formData.email.includes('admin') || formData.email === 'admin@snafles.com') {
-        const user = {
-          id: 'admin-1',
-          name: 'Admin User',
-          email: formData.email,
-          role: 'admin'
-        };
-        
-        login(user);
+      const result = await login(formData.email, formData.password);
+      if (result.success && result.user?.role === 'admin') {
         toast.success('Admin login successful!');
         navigate('/admin-dashboard');
       } else {
-        toast.error('Invalid admin credentials');
+        toast.error(result.message || 'Invalid admin credentials');
       }
     } catch (error) {
       toast.error('Login failed. Please try again.');

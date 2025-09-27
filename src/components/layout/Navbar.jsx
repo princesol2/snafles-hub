@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, ShoppingCart, User, Menu, X, Heart, Store, Shield, MessageSquare } from 'lucide-react'
+import { Search, ShoppingCart, User, Menu, X, Heart, Store, Shield, MessageSquare, Settings } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCart } from '../../contexts/CartContext'
 
@@ -50,59 +50,70 @@ const Navbar = () => {
   }
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
-              {/* Top Bar */}
-              <div className="bg-primary text-white py-2">
-                <div className="container">
-                  <p className="text-center text-sm">
-                    🎉 Free shipping on orders over ₹999! New arrivals every week.
-                  </p>
-                </div>
-              </div>
+    <header className="bg-white/95 backdrop-blur-md shadow-soft sticky top-0 z-50 border-b border-gray-200/50">
+      {/* Top Bar */}
+      <div className="gradient-primary text-white py-3">
+        <div className="container">
+          <p className="text-center text-sm font-medium">
+            🎉 Free shipping on orders over ₹999! New arrivals every week.
+          </p>
+        </div>
+      </div>
 
       {/* Main Navigation */}
-      <nav className="container py-4">
+      <nav className="container py-6">
         <div className="flex items-center justify-between">
-                  {/* Logo */}
-                  <Link to="/" className="flex items-center space-x-2">
-                    <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                      S
-                    </div>
-                    <span className="text-2xl font-bold text-primary">SNAFLEShub</span>
-                  </Link>
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-3 group">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-md group-hover:shadow-glow transition-all duration-300">
+              S
+            </div>
+            <span className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-blue-800 bg-clip-text text-transparent">
+              SNAFLES Hub
+            </span>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8">
-            <Link to="/" className="text-gray-700 hover:text-primary font-medium">
+            <Link to="/" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
               Home
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
             </Link>
-            <Link to="/products" className="text-gray-700 hover:text-primary font-medium">
+            <Link to="/products" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
               Shop
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
             </Link>
-            <Link to="/vendors" className="text-gray-700 hover:text-primary font-medium">
+            <Link to="/vendors" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
               Vendors
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
             </Link>
-            <Link to="/wishlist" className="text-gray-700 hover:text-primary font-medium">
-              Wishlist
-            </Link>
-            <Link to="/negotiations" className="text-gray-700 hover:text-primary font-medium">
-              Negotiations
-            </Link>
+            {user && (
+              <Link to="/wishlist" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
+                Wishlist
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+              </Link>
+            )}
+            {user && (
+              <Link to="/negotiations" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
+                Negotiations
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+              </Link>
+            )}
           </div>
 
           {/* Search Bar */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-8">
+          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-lg mx-8">
             <div className="relative w-full">
               <input
                 type="text"
                 placeholder="Search products, brands, categories..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="input w-full pl-4 pr-12 py-3 bg-white/80 backdrop-blur-sm border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300"
               />
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors duration-300"
               >
                 <Search size={20} />
               </button>
@@ -110,73 +121,86 @@ const Navbar = () => {
           </form>
 
           {/* Actions */}
-          <div className="flex items-center space-x-4">
-            {/* Cart */}
-            <Link to="/cart" className="relative p-2 text-gray-700 hover:text-primary">
-              <ShoppingCart size={24} />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {cartItemCount}
-                </span>
-              )}
-            </Link>
+          <div className="flex items-center space-x-6">
+            {/* Cart - Only show when user is logged in */}
+            {user && (
+              <Link to="/cart" className="relative p-3 text-gray-700 hover:text-blue-600 transition-colors duration-300 group">
+                <ShoppingCart size={24} className="group-hover:scale-110 transition-transform duration-300" />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-semibold shadow-md">
+                    {cartItemCount}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {/* User Menu */}
             {user ? (
               <div className="relative group">
-                <button className="flex items-center space-x-2 text-gray-700 hover:text-primary">
-                  <User size={24} />
-                  <span className="hidden md:block">{user.name.split(' ')[0]}</span>
+                <button className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors duration-300 p-2 rounded-xl hover:bg-blue-50">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                    <User size={16} className="text-white" />
+                  </div>
+                  <span className="hidden md:block font-semibold">{user.name.split(' ')[0]}</span>
                 </button>
                 
                 {/* Dropdown Menu */}
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                  <div className="py-2">
-                    <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Profile
+                <div className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-md rounded-2xl shadow-large border border-gray-200/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
+                  <div className="py-3">
+                    <Link to="/settings" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
+                      <Settings size={16} />
+                      <span>Settings</span>
                     </Link>
-                    <Link to="/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Orders
+                    <Link to="/orders" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
+                      <Shield size={16} />
+                      <span>Orders</span>
                     </Link>
-                    <Link to="/wishlist" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Wishlist
+                    <Link to="/refund" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
+                      <span>Request Refund</span>
                     </Link>
-                    <Link to="/negotiations" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      <MessageSquare className="inline h-4 w-4 mr-2" />
-                      Negotiations
+                    <Link to="/exchange" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
+                      <span>Request Exchange</span>
+                    </Link>
+                    <Link to="/wishlist" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
+                      <Heart size={16} />
+                      <span>Wishlist</span>
+                    </Link>
+                    <Link to="/negotiations" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
+                      <MessageSquare size={16} />
+                      <span>Negotiations</span>
                     </Link>
                     {(user.role === 'vendor' || user.role === 'admin') && (
-                      <Link to="/vendor-dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        <Store className="inline h-4 w-4 mr-2" />
-                        Vendor Dashboard
+                      <Link to="/vendor-dashboard" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
+                        <Store size={16} />
+                        <span>Vendor Dashboard</span>
                       </Link>
                     )}
                     {user.role === 'admin' && (
-                      <Link to="/admin-dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        <Shield className="inline h-4 w-4 mr-2" />
-                        Admin Dashboard
+                      <Link to="/admin-dashboard" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
+                        <Shield size={16} />
+                        <span>Admin Dashboard</span>
                       </Link>
                     )}
-                    <hr className="my-1" />
+                    <div className="border-t border-gray-200 my-2"></div>
                     <button
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center space-x-3 w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors duration-300"
                     >
-                      Logout
+                      <span>Logout</span>
                     </button>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center space-x-2">
-                <Link to="/login" className="btn btn-primary">
+              <div className="flex items-center space-x-3">
+                <Link to="/login" className="btn btn-outline">
                   Login
                 </Link>
-                <Link to="/vendor-login" className="btn btn-outline text-sm">
+                <Link to="/vendor-login" className="btn btn-secondary text-sm">
                   <Store className="h-4 w-4 mr-1" />
                   Vendor
                 </Link>
-                <Link to="/admin-login" className="btn btn-outline text-sm">
+                <Link to="/admin-login" className="btn btn-pink text-sm">
                   <Shield className="h-4 w-4 mr-1" />
                   Admin
                 </Link>
@@ -186,7 +210,7 @@ const Navbar = () => {
             {/* Mobile Menu Button */}
             <button
               onClick={toggleMobileMenu}
-              className="lg:hidden p-2 text-gray-700 hover:text-primary"
+              className="lg:hidden p-3 text-gray-700 hover:text-blue-600 transition-colors duration-300 rounded-xl hover:bg-blue-50"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -194,7 +218,7 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Search */}
-        <div className="md:hidden mt-4">
+        <div className="md:hidden mt-6">
           <form onSubmit={handleSearch}>
             <div className="relative">
               <input
@@ -202,11 +226,11 @@ const Navbar = () => {
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="input w-full pl-4 pr-12 py-3 bg-white/80 backdrop-blur-sm border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300"
               />
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors duration-300"
               >
                 <Search size={20} />
               </button>
@@ -217,64 +241,66 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden bg-white border-t">
-          <div className="container py-4">
-            <nav className="flex flex-col space-y-4">
-              <Link to="/" onClick={toggleMobileMenu} className="text-gray-700 hover:text-primary font-medium">
+        <div className="lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200/50">
+          <div className="container py-6">
+            <nav className="flex flex-col space-y-6">
+              <Link to="/" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
                 Home
               </Link>
-              <Link to="/products" onClick={toggleMobileMenu} className="text-gray-700 hover:text-primary font-medium">
+              <Link to="/products" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
                 Shop
               </Link>
-              <Link to="/vendors" onClick={toggleMobileMenu} className="text-gray-700 hover:text-primary font-medium">
+              <Link to="/vendors" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
                 Vendors
               </Link>
-              <Link to="/wishlist" onClick={toggleMobileMenu} className="text-gray-700 hover:text-primary font-medium">
+              <Link to="/wishlist" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
                 Wishlist
               </Link>
-              <Link to="/negotiations" onClick={toggleMobileMenu} className="text-gray-700 hover:text-primary font-medium">
+              <Link to="/negotiations" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
                 Negotiations
               </Link>
               {user ? (
                 <>
-                  <Link to="/profile" onClick={toggleMobileMenu} className="text-gray-700 hover:text-primary font-medium">
-                    Profile
-                  </Link>
-                  <Link to="/orders" onClick={toggleMobileMenu} className="text-gray-700 hover:text-primary font-medium">
-                    Orders
-                  </Link>
-                  {(user.role === 'vendor' || user.role === 'admin') && (
-                    <Link to="/vendor-dashboard" onClick={toggleMobileMenu} className="text-gray-700 hover:text-primary font-medium">
-                      <Store className="inline h-4 w-4 mr-2" />
-                      Vendor Dashboard
+                  <div className="border-t border-gray-200 pt-6">
+                    <Link to="/settings" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2 block">
+                      Settings
                     </Link>
-                  )}
-                  {user.role === 'admin' && (
-                    <Link to="/admin-dashboard" onClick={toggleMobileMenu} className="text-gray-700 hover:text-primary font-medium">
-                      <Shield className="inline h-4 w-4 mr-2" />
-                      Admin Dashboard
+                    <Link to="/orders" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2 block">
+                      Orders
                     </Link>
-                  )}
-                  <button
-                    onClick={() => {
-                      handleLogout()
-                      toggleMobileMenu()
-                    }}
-                    className="text-left text-gray-700 hover:text-primary font-medium"
-                  >
-                    Logout
-                  </button>
+                    {(user.role === 'vendor' || user.role === 'admin') && (
+                      <Link to="/vendor-dashboard" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2 block">
+                        <Store className="inline h-4 w-4 mr-2" />
+                        Vendor Dashboard
+                      </Link>
+                    )}
+                    {user.role === 'admin' && (
+                      <Link to="/admin-dashboard" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2 block">
+                        <Shield className="inline h-4 w-4 mr-2" />
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => {
+                        handleLogout()
+                        toggleMobileMenu()
+                      }}
+                      className="text-left text-red-600 hover:text-red-700 font-semibold transition-colors duration-300 py-2"
+                    >
+                      Logout
+                    </button>
+                  </div>
                 </>
               ) : (
-                <div className="space-y-2">
-                  <Link to="/login" onClick={toggleMobileMenu} className="btn btn-primary w-full text-center">
+                <div className="space-y-3 pt-6 border-t border-gray-200">
+                  <Link to="/login" onClick={toggleMobileMenu} className="btn btn-outline w-full text-center">
                     Login
                   </Link>
-                  <Link to="/vendor-login" onClick={toggleMobileMenu} className="btn btn-outline w-full text-center">
+                  <Link to="/vendor-login" onClick={toggleMobileMenu} className="btn btn-secondary w-full text-center">
                     <Store className="h-4 w-4 mr-1" />
                     Vendor Login
                   </Link>
-                  <Link to="/admin-login" onClick={toggleMobileMenu} className="btn btn-outline w-full text-center">
+                  <Link to="/admin-login" onClick={toggleMobileMenu} className="btn btn-pink w-full text-center">
                     <Shield className="h-4 w-4 mr-1" />
                     Admin Login
                   </Link>

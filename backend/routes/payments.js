@@ -4,45 +4,58 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Stripe setup
+let stripe = null;
+try {
+  if (process.env.STRIPE_SECRET_KEY) {
+    stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  }
+} catch (e) {
+  console.warn('Stripe SDK not loaded:', e?.message || e);
+}
+
 // @route   POST /api/payments/create-payment-intent
 // @desc    Create Stripe payment intent
 // @access  Private
 router.post('/create-payment-intent', auth, [
   body('amount').isFloat({ min: 1 }).withMessage('Amount must be a positive number'),
-  body('currency').optional().isIn(['usd', 'inr', 'eur']).withMessage('Invalid currency')
+  body('currency').optional().isIn(['usd', 'inr', 'eur']).withMessage('Invalid currency'),
+  body('orderId').optional().isString()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
     const { amount, currency = 'inr', orderId } = req.body;
+    const amountInMinor = Math.round(amount * 100);
 
-    // In a real implementation, you would integrate with Stripe here
-    // For now, we'll simulate the payment intent creation
-    
-    const paymentIntent = {
-      id: `pi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      client_secret: `pi_${Date.now()}_secret_${Math.random().toString(36).substr(2, 9)}`,
-      amount: Math.round(amount * 100), // Convert to cents
-      currency: currency,
-      status: 'requires_payment_method',
-      orderId: orderId
-    };
+    if (!stripe) {
+      return res.status(500).json({ message: 'Stripe not configured. Set STRIPE_SECRET_KEY.' });
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountInMinor,
+      currency,
+      metadata: {
+        userId: String(req.user._id),
+        orderId: orderId || ''
+      },
+      automatic_payment_methods: { enabled: true }
+    });
 
     res.json({
       message: 'Payment intent created successfully',
-      paymentIntent
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id
     });
   } catch (error) {
     console.error('Create payment intent error:', error);
-    res.status(500).json({ message: 'Server error while creating payment intent' });
+    res.status(500).json({ message: error?.message || 'Server error while creating payment intent' });
   }
 });
 
 // @route   POST /api/payments/confirm-payment
-// @desc    Confirm payment
+// @desc    Confirm and verify payment, update order
 // @access  Private
 router.post('/confirm-payment', auth, [
   body('paymentIntentId').notEmpty().withMessage('Payment intent ID is required'),
@@ -50,26 +63,21 @@ router.post('/confirm-payment', auth, [
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    if (!stripe) return res.status(500).json({ message: 'Stripe not configured' });
 
     const { paymentIntentId, orderId } = req.body;
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (!pi) return res.status(404).json({ message: 'Payment Intent not found' });
 
-    // In a real implementation, you would verify the payment with Stripe here
-    // For now, we'll simulate a successful payment confirmation
-
-    const Order = require('../models/Order');
-    const order = await Order.findOne({ 
-      _id: orderId, 
-      user: req.user._id 
-    });
-
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+    if (pi.status !== 'succeeded') {
+      return res.status(400).json({ message: `Payment not succeeded (status: ${pi.status})` });
     }
 
-    // Update order payment status
+    const Order = require('../models/Order');
+    const order = await Order.findOne({ _id: orderId, user: req.user._id });
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
     order.payment.status = 'completed';
     order.payment.transactionId = paymentIntentId;
     order.status = 'confirmed';
@@ -86,7 +94,7 @@ router.post('/confirm-payment', auth, [
     });
   } catch (error) {
     console.error('Confirm payment error:', error);
-    res.status(500).json({ message: 'Server error while confirming payment' });
+    res.status(500).json({ message: error?.message || 'Server error while confirming payment' });
   }
 });
 
