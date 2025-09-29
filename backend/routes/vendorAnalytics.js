@@ -207,43 +207,7 @@ router.get('/orders', vendorAuth, async (req, res) => {
   }
 });
 
-// @route   GET /api/vendor/analytics/negotiations
-// @desc    Get vendor negotiations
-// @access  Private (Vendor)
-router.get('/negotiations', vendorAuth, async (req, res) => {
-  try {
-    const vendorId = req.user._id;
-    const { page = 1, limit = 20, status } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Build filter
-    const filter = { sellerId: vendorId, type: 'offer' };
-    if (status) filter.status = status;
-
-    const negotiations = await ChatMessage.find(filter)
-      .populate('productId', 'name price images')
-      .populate('buyerId', 'name email')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    const total = await ChatMessage.countDocuments(filter);
-
-    res.json({
-      negotiations,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(total / parseInt(limit)),
-        totalNegotiations: total,
-        hasNext: skip + negotiations.length < total,
-        hasPrev: parseInt(page) > 1
-      }
-    });
-  } catch (error) {
-    console.error('Get vendor negotiations error:', error);
-    res.status(500).json({ message: 'Server error while fetching negotiations' });
-  }
-});
+// Negotiations removed for Phase-1
 
 // @route   GET /api/vendor/analytics/sales-report
 // @desc    Get sales report for date range

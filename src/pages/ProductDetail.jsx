@@ -6,12 +6,7 @@ import { useCart } from '../contexts/CartContext'
 import { useAuth } from '../contexts/AuthContext'
 import { productsAPI } from '../services/api'
 import StarRating from '../components/reviews/StarRating'
-import NegotiationButton from '../components/NegotiationButton'
-import RealTimeChat from '../components/chat/RealTimeChat'
-import LiveBidding from '../components/bidding/LiveBidding'
-import PeerAssistance from '../components/assistance/PeerAssistance'
-import HelperPoints from '../components/rewards/HelperPoints'
-import VirtualTryOn from '../components/tryon/VirtualTryOn'
+// Negotiation/Chat/Bidding/Assistance/TryOn removed for minimal core
 import LoginModal from '../components/common/LoginModal'
 import toast from 'react-hot-toast'
 
@@ -31,12 +26,7 @@ const ProductDetail = () => {
   const [selectedColor, setSelectedColor] = useState(null)
   const [loading, setLoading] = useState(true)
   
-  // New feature states
-  const [showChat, setShowChat] = useState(false)
-  const [showBidding, setShowBidding] = useState(false)
-  const [showAssistance, setShowAssistance] = useState(false)
-  const [showHelperPoints, setShowHelperPoints] = useState(false)
-  const [showTryOn, setShowTryOn] = useState(false)
+  // Feature flags removed for Phase-1
   
   // Login modal state
   const [showLoginModal, setShowLoginModal] = useState(false)
@@ -528,41 +518,7 @@ const ProductDetail = () => {
                 </button>
               </div>
               
-              {/* Negotiation Button */}
-              <NegotiationButton 
-                product={product} 
-                vendor={{
-                  id: product?.vendor?.id || 1,
-                  name: product?.vendor?.name || 'Artisan Crafts Co.'
-                }}
-              />
-              
-              {/* New Feature Buttons */}
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  onClick={() => handleLoginPrompt('chat with vendor') || setShowChat(true)}
-                  className="btn btn-primary flex items-center justify-center space-x-2 hover-lift"
-                >
-                  <MessageSquare size={18} />
-                  <span>Chat & Negotiate</span>
-                </button>
-                
-                <button
-                  onClick={() => handleLoginPrompt('participate in live bidding') || setShowBidding(true)}
-                  className="btn btn-pink flex items-center justify-center space-x-2 hover-lift"
-                >
-                  <Zap size={18} />
-                  <span>Live Bidding</span>
-                </button>
-                
-                <button
-                  onClick={() => handleLoginPrompt('request peer assistance') || setShowAssistance(true)}
-                  className="btn btn-secondary flex items-center justify-center space-x-2 hover-lift"
-                >
-                  <HelpingHand size={18} />
-                  <span>Get Help</span>
-                </button>
-                
+              {/* Negotiation and advanced features removed for minimal core */}
                 <button
                   onClick={() => setShowTryOn(true)}
                   className="btn btn-ghost flex items-center justify-center space-x-2 hover-lift border-2 border-blue-200 hover:border-blue-300 hover:bg-blue-50"
@@ -771,58 +727,7 @@ const ProductDetail = () => {
       
       
       {/* Feature Modals */}
-      {(showChat || showBidding || showAssistance || showHelperPoints || showTryOn) && (
-        <div className="fixed inset-0 z-50">
-        {showChat && (
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-large max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              <RealTimeChat
-                productId={product?.id}
-                sellerId={product?.vendor?.id}
-                onClose={() => setShowChat(false)}
-              />
-            </div>
-          </div>
-        )}
-        
-        {showBidding && (
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-large max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              <LiveBidding
-                product={product}
-                onClose={() => setShowBidding(false)}
-              />
-            </div>
-          </div>
-        )}
-        
-        {showAssistance && (
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-large max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              <PeerAssistance
-                product={product}
-                onClose={() => setShowAssistance(false)}
-              />
-            </div>
-          </div>
-        )}
-        
-        {showHelperPoints && (
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-large max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              <HelperPoints
-                onClose={() => setShowHelperPoints(false)}
-              />
-            </div>
-          </div>
-        )}
-        
-
-        {showTryOn && (
-          <VirtualTryOn product={product} onClose={() => setShowTryOn(false)} />
-        )}
-        </div>
-      )}
+      {/* Advanced modals removed */}
 
       {/* Login Modal */}
       <LoginModal 

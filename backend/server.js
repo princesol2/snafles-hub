@@ -6,7 +6,6 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const connectDB = require('./config/database');
-const socketService = require('./services/socketService');
 require('dotenv').config();
 require('./worker/repayment');
 
@@ -17,8 +16,6 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 
-// Initialize WebSocket
-socketService.initialize(server);
 
 // Security middleware
 app.use(helmet());
@@ -64,8 +61,7 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/upload', require('./routes/upload'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/secondhand', require('./routes/secondhand'));
-app.use('/api/chat', require('./routes/chat'));
-app.use('/api/negotiations', require('./routes/negotiations'));
+// Chat/Negotiations removed for Phase-1 simple core
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/rewards', require('./routes/rewards'));
 app.use('/api/repayment', require('./routes/repayment'));

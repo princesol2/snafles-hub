@@ -16,6 +16,15 @@ const productSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  kind: {
+    type: String,
+    enum: ['NEW', 'SECOND_HAND'],
+    default: 'NEW'
+  },
+  condition: {
+    type: String,
+    enum: ['Like New', 'Good', 'Fair', 'Needs Repair'],
+  },
   originalPrice: {
     type: Number,
     min: 0
@@ -33,6 +42,15 @@ const productSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vendor',
     required: true
+  },
+  shipping: {
+    type: {
+      type: String,
+      enum: ['FLAT', 'PICKUP_ONLY'],
+      default: 'FLAT'
+    },
+    amount: { type: Number, default: 0 },
+    city: { type: String }
   },
   stock: {
     type: Number,
@@ -87,6 +105,11 @@ const productSchema = new mongoose.Schema({
   approved: {
     type: Boolean,
     default: false
+  },
+  status: {
+    type: String,
+    enum: ['PENDING', 'APPROVED', 'REJECTED'],
+    default: 'PENDING'
   },
   negotiable: {
     type: Boolean,

@@ -94,7 +94,9 @@ const Login = () => {
         const result = await login(formData.email, formData.password)
         if (result.success) {
           toast.success(`Welcome back, ${result.user.name.split(' ')[0]}!`)
-          navigate(from, { replace: true })
+          const role = result.user.role
+          const dest = role === 'admin' ? '/dashboard/admin' : role === 'vendor' ? '/dashboard/vendor' : '/dashboard/customer'
+          navigate(dest, { replace: true })
         } else {
           toast.error(result.message)
         }
@@ -108,7 +110,9 @@ const Login = () => {
         const result = await register(formData)
         if (result.success) {
           toast.success('Account created successfully!')
-          navigate(from, { replace: true })
+          const role = result.user.role
+          const dest = role === 'admin' ? '/dashboard/admin' : role === 'vendor' ? '/dashboard/vendor' : '/dashboard/customer'
+          navigate(dest, { replace: true })
         } else {
           toast.error(result.message)
         }

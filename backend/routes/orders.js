@@ -104,12 +104,20 @@ router.post('/', auth, [
         price: product.price,
         quantity: item.quantity,
         image: product.images[0],
-        vendor: product.vendor
+        vendor: product.vendor,
+        kind: product.kind || 'NEW'
       });
     }
 
-    // Calculate totals
-    const shippingCost = subtotal > 999 ? 0 : 99;
+    // Calculate shipping per item
+    let shippingCost = 0;
+    const defaultFlat = parseFloat(process.env.DEFAULT_SHIPPING_FLAT || '0');
+    for (const item of orderItems) {
+      const p = await Product.findById(item.product).select('shipping');
+      if (p?.shipping?.type === 'FLAT') {
+        shippingCost += (p.shipping.amount || defaultFlat) * item.quantity;
+      }
+    }
     const tax = Math.round(subtotal * 0.18);
     const discount = coupon ? Math.round(subtotal * (coupon.discount || 0)) : 0;
 
@@ -219,6 +227,35 @@ router.put('/:id/status', auth, [
 
     await order.save();
 
+    // On delivered: award points and create vendor payouts
+    if (status === 'delivered') {
+      try {
+        const User = require('../models/User');
+        const Payout = require('../models/Payout');
+        const earnRate = parseFloat(process.env.POINTS_EARN_RATE || '0.02');
+        const pointsEarned = Math.floor((order.items || []).reduce((sum, it) => {
+          return sum + (it.kind === 'NEW' ? (it.price * it.quantity) : 0);
+        }, 0) * earnRate);
+        if (pointsEarned > 0) {
+          await User.findByIdAndUpdate(order.user, { $inc: { loyaltyPoints: pointsEarned } });
+        }
+        // Payout per vendor for the order
+        const commissionPct = parseFloat(process.env.PLATFORM_COMMISSION_PCT || '5');
+        const byVendor = new Map();
+        for (const it of order.items) {
+          const gross = (byVendor.get(String(it.vendor)) || 0) + (it.price * it.quantity);
+          byVendor.set(String(it.vendor), gross);
+        }
+        for (const [vendorId, amountGross] of byVendor.entries()) {
+          const commissionAmt = Math.round((amountGross * commissionPct) / 100);
+          const amountNet = amountGross - commissionAmt;
+          await Payout.create({ vendorId, orderId: order._id, amountGross, commissionPct, commissionAmt, amountNet, status: 'PENDING' });
+        }
+      } catch (e) {
+        console.error('Post-delivery processing error:', e);
+      }
+    }
+
     res.json({
       message: 'Order status updated successfully',
       order
@@ -266,6 +303,33 @@ router.post('/:id/cancel', auth, async (req, res) => {
   } catch (error) {
     console.error('Cancel order error:', error);
     res.status(500).json({ message: 'Server error while cancelling order' });
+  }
+});
+
+// @route   POST /api/orders/:id/return
+// @desc    Request return (NEW items only within window)
+// @access  Private
+router.post('/:id/return', auth, async (req, res) => {
+  try {
+    const order = await Order.findOne({ _id: req.params.id, user: req.user._id });
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    const windowDays = parseInt(process.env.RETURN_WINDOW_DAYS || '7', 10);
+    const created = new Date(order.createdAt);
+    const cutoff = new Date(created.getTime() + windowDays * 24 * 60 * 60 * 1000);
+    if (new Date() > cutoff) {
+      return res.status(400).json({ message: 'Return window has closed' });
+    }
+    // Disallow return if any item is SECOND_HAND
+    const anySecondHand = (order.items || []).some(i => i.kind === 'SECOND_HAND');
+    if (anySecondHand) {
+      return res.status(400).json({ message: 'Second-Hand items are not eligible for return' });
+    }
+    order.status = 'return_requested';
+    await order.save();
+    res.json({ message: 'Return requested', order });
+  } catch (error) {
+    console.error('Return request error:', error);
+    res.status(500).json({ message: 'Server error while requesting return' });
   }
 });
 

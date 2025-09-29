@@ -37,7 +37,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import AdminLogin from './pages/AdminLogin'
 
 // Negotiation Pages
-import Negotiations from './pages/Negotiations'
+// Negotiations removed for phase-1
 
 // Review Pages
 import Reviews from './pages/Reviews'
@@ -56,6 +56,7 @@ import TermsOfService from './pages/TermsOfService'
 import AuthGuard from './components/routing/AuthGuard'
 import NotFound from './pages/NotFound'
 import SecondHand from './pages/SecondHand'
+import ReturnsPolicy from './pages/ReturnsPolicy'
 
 function App() {
   console.log('App component rendering...')
@@ -139,6 +140,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/policies/returns" element={<ReturnsPolicy />} />
                       <Route path="/profile" element={
                         <AuthGuard requireAuth={true}>
                           <Profile />
@@ -159,11 +161,7 @@ function App() {
                           <Wishlist />
                         </AuthGuard>
                       } />
-                      <Route path="/negotiations" element={
-                        <AuthGuard requireAuth={true}>
-                          <Negotiations />
-                        </AuthGuard>
-                      } />
+                      
                       <Route path="/reviews" element={
                         <AuthGuard requireAuth={true}>
                           <Reviews />
@@ -176,7 +174,7 @@ function App() {
                       } />
                   
                   {/* Vendor Routes */}
-                  <Route path="/vendor-dashboard" element={
+                  <Route path="/dashboard/vendor" element={
                     <AuthGuard requireAuth={true} allowedRoles={['vendor', 'admin']}>
                       <VendorDashboard />
                     </AuthGuard>
@@ -190,9 +188,14 @@ function App() {
                   } />
                   
                   {/* Admin Routes */}
-                  <Route path="/admin-dashboard" element={
+                  <Route path="/dashboard/admin" element={
                     <AuthGuard requireAuth={true} allowedRoles={['admin']}>
                       <AdminDashboard />
+                    </AuthGuard>
+                  } />
+                  <Route path="/dashboard/customer" element={
+                    <AuthGuard requireAuth={true} allowedRoles={['customer','vendor','admin']}>
+                      <Profile />
                     </AuthGuard>
                   } />
                   <Route path="/admin-login" element={<AdminLogin />} />

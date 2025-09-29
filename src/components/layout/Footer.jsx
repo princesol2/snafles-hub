@@ -34,22 +34,22 @@ const Footer = () => {
             <ul className="space-y-2">
               <li>
                 <Link to="/products" className="text-gray-300 hover:text-blue-400 transition-colors">
-                  All Products
+                  Shop
                 </Link>
               </li>
               <li>
-                <Link to="/vendors" className="text-gray-300 hover:text-blue-400 transition-colors">
-                  Vendors
+                <Link to="/second-hand" className="text-gray-300 hover:text-blue-400 transition-colors">
+                  Second-Hand
                 </Link>
               </li>
               <li>
-                <Link to="/wishlist" className="text-gray-300 hover:text-blue-400 transition-colors">
-                  Wishlist
+                <Link to="/cart" className="text-gray-300 hover:text-blue-400 transition-colors">
+                  Cart
                 </Link>
               </li>
               <li>
-                <Link to="/orders" className="text-gray-300 hover:text-blue-400 transition-colors">
-                  Order History
+                <Link to="/dashboard/customer" className="text-gray-300 hover:text-blue-400 transition-colors">
+                  Dashboard
                 </Link>
               </li>
             </ul>
@@ -119,6 +119,9 @@ const Footer = () => {
               </Link>
               <Link to="/terms-of-service" className="text-gray-300 hover:text-blue-400 text-sm transition-colors">
                 Terms of Service
+              </Link>
+              <Link to="/policies/returns" className="text-gray-300 hover:text-blue-400 text-sm transition-colors">
+                Returns Policy
               </Link>
               <Link to="/cookie-policy" className="text-gray-300 hover:text-blue-400 text-sm transition-colors">
                 Cookie Policy

@@ -365,58 +365,7 @@ export const secondhandAPI = {
 };
 
 // Chat API
-export const chatAPI = {
-  // Get messages for a product/negotiation
-  getMessages: async (productId) => {
-    return apiRequest(`/chat/messages/${productId}`);
-  },
-
-  // Send message
-  sendMessage: async (messageData) => {
-    return apiRequest('/chat/send', {
-      method: 'POST',
-      body: JSON.stringify(messageData),
-    });
-  },
-
-  // Send offer
-  sendOffer: async (offerData) => {
-    return apiRequest('/chat/send-offer', {
-      method: 'POST',
-      body: JSON.stringify(offerData),
-    });
-  },
-};
-
-// Negotiations API
-export const negotiationsAPI = {
-  // Get user negotiations
-  getNegotiations: async (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    return apiRequest(`/negotiations${queryString ? `?${queryString}` : ''}`);
-  },
-
-  // Get single negotiation
-  getNegotiation: async (id) => {
-    return apiRequest(`/negotiations/${id}`);
-  },
-
-  // Create negotiation
-  createNegotiation: async (negotiationData) => {
-    return apiRequest('/negotiations', {
-      method: 'POST',
-      body: JSON.stringify(negotiationData),
-    });
-  },
-
-  // Update negotiation status
-  updateNegotiationStatus: async (id, status) => {
-    return apiRequest(`/negotiations/${id}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    });
-  },
-};
+// Chat/Negotiations removed for Phase-1
 
 // Reviews API
 export const reviewsAPI = {
@@ -507,10 +456,7 @@ export const vendorAnalyticsAPI = {
   },
 
   // Get negotiations
-  getNegotiations: async (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    return apiRequest(`/vendor/analytics/negotiations${queryString ? `?${queryString}` : ''}`);
-  },
+  // negotiations removed
 
   // Get sales report
   getSalesReport: async (params = {}) => {

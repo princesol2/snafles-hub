@@ -17,7 +17,8 @@ router.get('/', [
   query('minPrice').optional().isFloat({ min: 0 }).withMessage('Min price must be a positive number'),
   query('maxPrice').optional().isFloat({ min: 0 }).withMessage('Max price must be a positive number'),
   query('sortBy').optional().isIn(['name', 'price', 'rating', 'createdAt']).withMessage('Invalid sort field'),
-  query('sortOrder').optional().isIn(['asc', 'desc']).withMessage('Sort order must be asc or desc')
+  query('sortOrder').optional().isIn(['asc', 'desc']).withMessage('Sort order must be asc or desc'),
+  query('kind').optional().isIn(['NEW', 'SECOND_HAND']).withMessage('Invalid kind')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -39,7 +40,7 @@ router.get('/', [
     } = req.query;
 
     // Build filter object
-    const filter = { isActive: true, approved: true };
+    const filter = { isActive: true, approved: true, status: 'APPROVED' };
     
     if (search) {
       filter.$text = { $search: search };
@@ -61,6 +62,9 @@ router.get('/', [
     
     if (vendor) {
       filter.vendor = vendor;
+    }
+    if (req.query.kind) {
+      filter.kind = req.query.kind;
     }
 
     // Build sort object
@@ -124,7 +128,8 @@ router.post('/', vendorAuth, [
   body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
   body('category').isIn(['Jewelry', 'Decor', 'Clothing', 'Accessories', 'Home', 'Art']).withMessage('Invalid category'),
   body('images').isArray({ min: 1 }).withMessage('At least one image is required'),
-  body('stock').isInt({ min: 0 }).withMessage('Stock must be a non-negative integer')
+  body('stock').isInt({ min: 0 }).withMessage('Stock must be a non-negative integer'),
+  body('kind').optional().isIn(['NEW', 'SECOND_HAND']),
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -134,7 +139,10 @@ router.post('/', vendorAuth, [
 
     const productData = {
       ...req.body,
-      vendor: req.user.role === 'admin' ? req.body.vendor : req.user._id
+      vendor: req.user.role === 'admin' ? req.body.vendor : req.user._id,
+      approved: false,
+      status: 'PENDING',
+      kind: req.body.kind || 'NEW'
     };
 
     const product = new Product(productData);
@@ -168,9 +176,13 @@ router.put('/:id', vendorAuth, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to update this product' });
     }
 
+    const update = { ...req.body };
+    // Any edit sets status back to pending for re-approval
+    update.status = 'PENDING';
+    update.approved = false;
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      update,
       { new: true, runValidators: true }
     ).populate('vendor', 'name logo');
 
@@ -269,9 +281,10 @@ router.put('/:id/approve', adminAuth, [
     }
 
     const { approved } = req.body;
+    const update = approved ? { approved: true, status: 'APPROVED' } : { approved: false, status: 'REJECTED' };
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      { approved },
+      update,
       { new: true }
     ).populate('vendor', 'name logo');
 

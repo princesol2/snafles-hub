@@ -511,28 +511,3 @@ const ProductManagement = () => {
 };
 
 export default ProductManagement;
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await vendorAnalyticsAPI.getProducts();
-        const list = res.products || [];
-        setProducts(list.map(p => ({
-          id: p._id || p.id,
-          name: p.name,
-          price: p.price,
-          stock: p.stock,
-          category: p.category,
-          status: p.isActive ? 'active' : 'inactive',
-          image: Array.isArray(p.images) ? p.images[0] : p.image,
-          description: p.description,
-          featured: Boolean(p.featured),
-          createdAt: p.createdAt?.slice(0,10)
-        }))
-        );
-      } catch (e) {
-        console.error('Failed to load products', e);
-        toast.error('Failed to load products');
-      }
-    };
-    load();
-  }, []);

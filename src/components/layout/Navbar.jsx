@@ -71,31 +71,21 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8 ml-12">
-            <Link to="/" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
-              Home
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
-            </Link>
             <Link to="/products" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
               Shop
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
-            </Link>
-            <Link to="/vendors" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
-              Vendors
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
             </Link>
             <Link to="/second-hand" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
               Second-Hand
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
             </Link>
+            <Link to="/cart" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
+              Cart
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+            </Link>
             {user && (
-              <Link to="/wishlist" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
-                Wishlist
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
-              </Link>
-            )}
-            {user && (
-              <Link to="/negotiations" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
-                Negotiations
+              <Link to={user.role === 'admin' ? '/dashboard/admin' : user.role === 'vendor' ? '/dashboard/vendor' : '/dashboard/customer'} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
+                Dashboard
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
               </Link>
             )}
@@ -238,23 +228,14 @@ const Navbar = () => {
         <div className="lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200/50">
           <div className="container py-6">
             <nav className="flex flex-col space-y-6">
-              <Link to="/" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
-                Home
-              </Link>
               <Link to="/products" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
                 Shop
-              </Link>
-              <Link to="/vendors" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
-                Vendors
               </Link>
               <Link to="/second-hand" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
                 Second-Hand
               </Link>
-              <Link to="/wishlist" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
-                Wishlist
-              </Link>
-              <Link to="/negotiations" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
-                Negotiations
+              <Link to="/cart" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
+                Cart
               </Link>
               {user ? (
                 <>
@@ -266,13 +247,13 @@ const Navbar = () => {
                       Orders
                     </Link>
                     {(user.role === 'vendor' || user.role === 'admin') && (
-                      <Link to="/vendor-dashboard" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2 block">
+                      <Link to="/dashboard/vendor" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2 block">
                         <Store className="inline h-4 w-4 mr-2" />
                         Vendor Dashboard
                       </Link>
                     )}
                     {user.role === 'admin' && (
-                      <Link to="/admin-dashboard" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2 block">
+                      <Link to="/dashboard/admin" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2 block">
                         <Shield className="inline h-4 w-4 mr-2" />
                         Admin Dashboard
                       </Link>

@@ -46,10 +46,7 @@ router.get('/dashboard', adminAuth, async (req, res) => {
     });
 
     // Get active negotiations
-    const activeNegotiations = await ChatMessage.countDocuments({ 
-      type: 'offer', 
-      status: 'pending' 
-    });
+    const activeNegotiations = 0;
 
     // Get platform rating (average of all product ratings)
     const ratingData = await Product.aggregate([
@@ -333,98 +330,45 @@ router.put('/vendors/:id/status', adminAuth, [
   }
 });
 
-// @route   GET /api/admin/negotiations
-// @desc    Get all negotiations for moderation
-// @access  Private (Admin)
-router.get('/negotiations', adminAuth, [
-  query('page').optional().isInt({ min: 1 }),
-  query('limit').optional().isInt({ min: 1, max: 100 }),
-  query('status').optional().isIn(['pending', 'accepted', 'rejected', 'completed']),
-  query('type').optional().isIn(['offer', 'counter-offer'])
-], async (req, res) => {
+// Negotiation moderation endpoints removed for Phase-1
+
+// Admin products approvals
+router.get('/products', adminAuth, async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { page = 1, limit = 20, status, type } = req.query;
+    const { status = 'PENDING', page = 1, limit = 20 } = req.query;
+    const Product = require('../models/Product');
+    const filter = {};
+    if (status === 'PENDING') filter.status = 'PENDING';
+    if (status === 'APPROVED') filter.status = 'APPROVED';
+    if (status === 'REJECTED') filter.status = 'REJECTED';
     const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Build filter
-    const filter = { type: 'offer' };
-    if (status) filter.status = status;
-
-    const negotiations = await ChatMessage.find(filter)
-      .populate('productId', 'name price images')
-      .populate('buyerId', 'name email')
-      .populate('sellerId', 'name email')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    const total = await ChatMessage.countDocuments(filter);
-
-    res.json({
-      negotiations,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(total / parseInt(limit)),
-        totalNegotiations: total,
-        hasNext: skip + negotiations.length < total,
-        hasPrev: parseInt(page) > 1
-      }
-    });
-  } catch (error) {
-    console.error('Get admin negotiations error:', error);
-    res.status(500).json({ message: 'Server error while fetching negotiations' });
+    const products = await Product.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));
+    const total = await Product.countDocuments(filter);
+    res.json({ products, pagination: { total, page: parseInt(page) } });
+  } catch (e) {
+    res.status(500).json({ message: 'Server error while fetching products' });
   }
 });
 
-// @route   PUT /api/admin/negotiations/:id/moderate
-// @desc    Moderate a negotiation (approve/reject)
-// @access  Private (Admin)
-router.put('/negotiations/:id/moderate', adminAuth, [
-  body('action').isIn(['approve', 'reject']).withMessage('Action must be approve or reject'),
-  body('reason').optional().isLength({ min: 1, max: 500 }).withMessage('Reason must be between 1 and 500 characters')
-], async (req, res) => {
+router.patch('/products/:id/approve', adminAuth, async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+    const Product = require('../models/Product');
+    const p = await Product.findByIdAndUpdate(req.params.id, { status: 'APPROVED', approved: true }, { new: true });
+    if (!p) return res.status(404).json({ message: 'Product not found' });
+    res.json({ message: 'Approved', product: p });
+  } catch (e) {
+    res.status(500).json({ message: 'Server error while approving product' });
+  }
+});
 
-    const { action, reason } = req.body;
-    const negotiation = await ChatMessage.findById(req.params.id);
-
-    if (!negotiation) {
-      return res.status(404).json({ message: 'Negotiation not found' });
-    }
-
-    if (action === 'approve') {
-      negotiation.status = 'accepted';
-    } else {
-      negotiation.status = 'rejected';
-    }
-
-    // Add moderation history
-    if (!negotiation.moderationHistory) negotiation.moderationHistory = [];
-    negotiation.moderationHistory.push({
-      action,
-      reason,
-      moderatedBy: req.user._id,
-      moderatedAt: new Date()
-    });
-
-    await negotiation.save();
-
-    res.json({
-      message: `Negotiation ${action}d successfully`,
-      negotiation
-    });
-  } catch (error) {
-    console.error('Moderate negotiation error:', error);
-    res.status(500).json({ message: 'Server error while moderating negotiation' });
+router.patch('/products/:id/reject', adminAuth, async (req, res) => {
+  try {
+    const Product = require('../models/Product');
+    const p = await Product.findByIdAndUpdate(req.params.id, { status: 'REJECTED', approved: false }, { new: true });
+    if (!p) return res.status(404).json({ message: 'Product not found' });
+    res.json({ message: 'Rejected', product: p });
+  } catch (e) {
+    res.status(500).json({ message: 'Server error while rejecting product' });
   }
 });
 
