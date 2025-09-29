@@ -8,7 +8,9 @@
     "dev": "nodemon server.js",
     "start:mock": "node server-mock.js",
     "dev:mock": "nodemon server-mock.js",
-    "seed": "node scripts/seedData.js"
+    "seed": "node scripts/seedData.js",
+    "clean:db": "node scripts/cleanDb.js --force",
+    "reset:db": "node scripts/cleanDb.js --force --seed"
   },
   "keywords": [
     "ecommerce",
