@@ -89,7 +89,7 @@ function App() {
                         </AuthGuard>
                       } />
                       <Route path="/vendors" element={
-                        <AuthGuard requireAuth={true}>
+                        <AuthGuard requireAuth={false} guestAllowed={true}>
                           <Vendors />
                         </AuthGuard>
                       } />
@@ -99,7 +99,7 @@ function App() {
                         </AuthGuard>
                       } />
                       <Route path="/vendor/:id" element={
-                        <AuthGuard requireAuth={true}>
+                        <AuthGuard requireAuth={false} guestAllowed={true}>
                           <VendorShop />
                         </AuthGuard>
                       } />

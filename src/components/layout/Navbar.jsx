@@ -71,8 +71,16 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8 ml-12">
+            <Link to="/" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
+              Home
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+            </Link>
             <Link to="/products" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
               Shop
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+            </Link>
+            <Link to="/vendors" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
+              Vendors
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
             </Link>
             <Link to="/second-hand" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
@@ -225,8 +233,14 @@ const Navbar = () => {
         <div className="lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200/50">
           <div className="container py-6">
             <nav className="flex flex-col space-y-6">
+              <Link to="/" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
+                Home
+              </Link>
               <Link to="/products" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
                 Shop
+              </Link>
+              <Link to="/vendors" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
+                Vendors
               </Link>
               <Link to="/second-hand" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
                 Second-Hand
