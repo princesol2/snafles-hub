@@ -12,9 +12,10 @@ const Footer = () => {
             <div className="mb-4">
               <Logo size="small" className="text-white" />
             </div>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-300 mb-1">
               Your global marketplace for unique handmade treasures. Connecting artisans with customers worldwide.
             </p>
+            <p className="text-gray-200 font-semibold mb-4">We care. We deliver.</p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">
                 <Facebook size={20} />
