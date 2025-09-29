@@ -149,10 +149,7 @@ const Navbar = () => {
                       <Heart size={16} />
                       <span>Wishlist</span>
                     </Link>
-                    <Link to="/negotiations" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
-                      <MessageSquare size={16} />
-                      <span>Negotiations</span>
-                    </Link>
+                    
                     {(user.role === 'vendor' || user.role === 'admin') && (
                       <Link to="/vendor-dashboard" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
                         <Store size={16} />

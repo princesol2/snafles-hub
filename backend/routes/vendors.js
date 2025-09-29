@@ -5,6 +5,7 @@ const Product = require('../models/Product');
 const Order = require('../models/Order');
 const { auth, adminAuth } = require('../middleware/auth');
 const VendorFeedback = require('../models/VendorFeedback');
+const { vendorAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -268,6 +269,26 @@ router.get('/:id/stats', auth, async (req, res) => {
 });
 
 module.exports = router;
+// Vendor order status updates
+router.patch('/orders/:id/status', vendorAuth, [
+  body('status').isIn(['confirmed','shipped','delivered']).withMessage('Invalid status')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    const vendorId = String(req.user._id);
+    const hasItems = (order.items || []).some(i => String(i.vendor) === vendorId);
+    if (!hasItems) return res.status(403).json({ message: 'Not authorized for this order' });
+    order.status = req.body.status;
+    await order.save();
+    res.json({ message: 'Order status updated', order });
+  } catch (e) {
+    console.error('Vendor update order status error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 // Vendor feedback routes
 
 // @route   POST /api/vendors/feedback
