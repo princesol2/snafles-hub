@@ -553,8 +553,6 @@ export default {
   ordersAPI,
   paymentsAPI,
   uploadAPI,
-  chatAPI,
-  negotiationsAPI,
   reviewsAPI,
   rewardsAPI,
   repaymentAPI,

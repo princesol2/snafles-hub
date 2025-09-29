@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, query, validationResult } = require('express-validator');
 const { auth, adminAuth } = require('../middleware/auth');
-const SecondHandProduct = require('../models/SecondHandProduct');
+const Product = require('../models/Product');
 
 const router = express.Router();
 
@@ -13,16 +13,16 @@ router.get('/', [
 ], async (req, res) => {
   try {
     const { page = 1, limit = 20, category, search } = req.query;
-    const filter = { approved: true, isActive: true };
+    const filter = { approved: true, isActive: true, status: 'APPROVED', kind: 'SECOND_HAND' };
     if (category) filter.category = category;
     if (search) filter.$text = { $search: search };
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const items = await SecondHandProduct.find(filter)
+    const items = await Product.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
-    const total = await SecondHandProduct.countDocuments(filter);
+    const total = await Product.countDocuments(filter);
     res.json({
       products: items,
       pagination: {
@@ -40,7 +40,7 @@ router.get('/', [
 // Public: get by id
 router.get('/:id', async (req, res) => {
   try {
-    const item = await SecondHandProduct.findById(req.params.id).populate('seller', 'name email');
+    const item = await Product.findById(req.params.id).populate('vendor', 'name');
     if (!item || !item.isActive) return res.status(404).json({ message: 'Product not found' });
     res.json(item);
   } catch (error) {
@@ -60,8 +60,8 @@ router.post('/', auth, [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-    const data = { ...req.body, seller: req.user._id, approved: false };
-    const doc = new SecondHandProduct(data);
+    const data = { ...req.body, vendor: req.user._id, approved: false, status: 'PENDING', kind: 'SECOND_HAND' };
+    const doc = new Product(data);
     await doc.save();
     res.status(201).json({ message: 'Second-hand product submitted for approval', product: doc });
   } catch (error) {
@@ -73,12 +73,13 @@ router.post('/', auth, [
 // Auth: update own
 router.put('/:id', auth, async (req, res) => {
   try {
-    const item = await SecondHandProduct.findById(req.params.id);
+    const item = await Product.findById(req.params.id);
     if (!item) return res.status(404).json({ message: 'Product not found' });
-    if (item.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (item.vendor.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized' });
     }
-    const updated = await SecondHandProduct.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const update = { ...req.body, status: 'PENDING', approved: false };
+    const updated = await Product.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
     res.json({ message: 'Product updated', product: updated });
   } catch (error) {
     console.error('Update second-hand error:', error);
@@ -89,9 +90,9 @@ router.put('/:id', auth, async (req, res) => {
 // Auth: delete (soft)
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const item = await SecondHandProduct.findById(req.params.id);
+    const item = await Product.findById(req.params.id);
     if (!item) return res.status(404).json({ message: 'Product not found' });
-    if (item.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (item.vendor.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized' });
     }
     item.isActive = false;
@@ -110,7 +111,7 @@ router.put('/:id/approve', adminAuth, [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-    const updated = await SecondHandProduct.findByIdAndUpdate(req.params.id, { approved: req.body.approved }, { new: true });
+    const updated = await Product.findByIdAndUpdate(req.params.id, req.body.approved ? { approved: true, status: 'APPROVED' } : { approved: false, status: 'REJECTED' }, { new: true });
     if (!updated) return res.status(404).json({ message: 'Product not found' });
     res.json({ message: 'Approval status updated', product: updated });
   } catch (error) {
@@ -120,4 +121,3 @@ router.put('/:id/approve', adminAuth, [
 });
 
 module.exports = router;
-

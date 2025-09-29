@@ -61,6 +61,7 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/upload', require('./routes/upload'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/secondhand', require('./routes/secondhand'));
+app.use('/api/cart', require('./routes/cart'));
 // Chat/Negotiations removed for Phase-1 simple core
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/rewards', require('./routes/rewards'));
