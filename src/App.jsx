@@ -48,6 +48,11 @@ import OrderSuccess from './pages/OrderSuccess'
 import OrderTracking from './pages/OrderTracking'
 import Refund from './pages/Refund'
 import Exchange from './pages/Exchange'
+import HelpCenter from './pages/HelpCenter'
+import ShippingInfo from './pages/ShippingInfo'
+import Contact from './pages/Contact'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
 import AuthGuard from './components/routing/AuthGuard'
 import NotFound from './pages/NotFound'
 
@@ -118,11 +123,16 @@ function App() {
                           <Refund />
                         </AuthGuard>
                       } />
-                      <Route path="/exchange" element={
-                        <AuthGuard requireAuth={true}>
-                          <Exchange />
-                        </AuthGuard>
-                      } />
+        <Route path="/exchange" element={
+          <AuthGuard requireAuth={true}>
+            <Exchange />
+          </AuthGuard>
+        } />
+        <Route path="/help-center" element={<HelpCenter />} />
+        <Route path="/shipping-info" element={<ShippingInfo />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
                       <Route path="/profile" element={
                         <AuthGuard requireAuth={true}>
                           <Profile />

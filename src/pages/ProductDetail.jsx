@@ -52,9 +52,12 @@ const ProductDetail = () => {
     const load = async () => {
       setLoading(true)
       try {
+        console.log('Loading product with ID:', id)
+        
         // Try from context first
         const productData = getProductById(id)
         if (productData) {
+          console.log('Product found in context:', productData)
           if (!isMounted) return
           setProduct(productData)
           if (productData.variants && productData.variants.length > 0) {
@@ -62,8 +65,12 @@ const ProductDetail = () => {
           }
           return
         }
+        
         // Fallback: fetch from API
+        console.log('Product not in context, fetching from API...')
         const data = await productsAPI.getProduct(id)
+        console.log('Product data from API:', data)
+        
         const normalized = {
           ...data,
           id: data.id || data._id,
@@ -72,19 +79,29 @@ const ProductDetail = () => {
             ? { ...data.vendor, id: data.vendor.id || data.vendor._id }
             : data.vendor
         }
+        
         if (!isMounted) return
         setProduct(normalized)
         if (normalized.variants && normalized.variants.length > 0) {
           setSelectedVariant(normalized.variants[0])
         }
       } catch (e) {
+        console.error('Error loading product:', e)
         if (!isMounted) return
+        toast.error('Product not found')
         navigate('/products')
       } finally {
         if (isMounted) setLoading(false)
       }
     }
-    load()
+    
+    if (id) {
+      load()
+    } else {
+      console.error('No product ID provided')
+      navigate('/products')
+    }
+    
     return () => { isMounted = false }
   }, [id, getProductById, navigate])
 
@@ -236,7 +253,7 @@ const ProductDetail = () => {
     )
   }
 
-  const images = (product.images && product.images.length > 0) ? product.images : (product.image ? [product.image] : [])
+  const images = (product.images && product.images.length > 0) ? product.images : (product.image ? [product.image] : ['/placeholder-product.jpg'])
   const discount = product.originalPrice 
     ? Math.round((1 - product.price / product.originalPrice) * 100) 
     : 0
@@ -252,9 +269,12 @@ const ProductDetail = () => {
           <div className="space-y-4">
             <div className="relative aspect-square bg-white rounded-xl overflow-hidden shadow-sm group">
               <img
-                src={images[selectedImage]}
+                src={images[selectedImage] || '/placeholder-product.jpg'}
                 alt={product.name}
                 className="w-full h-full object-cover transition-opacity duration-500 ease-in-out"
+                onError={(e) => {
+                  e.target.src = '/placeholder-product.jpg'
+                }}
               />
               
               {/* Image Navigation Arrows */}
@@ -319,6 +339,9 @@ const ProductDetail = () => {
                       src={image}
                       alt={`${product.name} ${index + 1}`}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = '/placeholder-product.jpg'
+                      }}
                     />
                   </button>
                 ))}
@@ -350,7 +373,7 @@ const ProductDetail = () => {
             </div>
 
             <div className="flex items-center space-x-4">
-              <span className="text-3xl font-bold text-primary">₹{product.price.toLocaleString()}</span>
+              <span className="text-3xl font-bold text-primary">₹{(product.price || 0).toLocaleString()}</span>
               {product.originalPrice && (
                 <>
                   <span className="text-xl text-gray-500 line-through">
@@ -475,7 +498,7 @@ const ProductDetail = () => {
                   <Plus size={16} />
                 </button>
                 <span className="text-sm text-gray-500 ml-2">
-                  {selectedSize ? selectedSize.stock : (product.stock || 99)} available
+                  {selectedSize ? (selectedSize.stock || 0) : (product.stock || 99)} available
                 </span>
               </div>
             </div>

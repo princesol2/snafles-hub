@@ -606,6 +606,52 @@ const mockProducts = [
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date()
+  },
+  {
+    id: "beauty-bani-003",
+    name: "Nude Elegance Press-On Nails with Gold Glitter Accent",
+    description: "A chic set of press-on nails blending modern nude tones with bold gold glitter accents — perfect for parties, weddings, or everyday glam.",
+    detailedDescription: "Elevate your style effortlessly with our Nude Elegance Press-On Nails. This curated set features a natural nude base for a timeless, sophisticated look, paired with two dazzling gold glitter accent nails to add sparkle and personality. Easy to apply and reusable, these nails give you a salon-quality finish in minutes without the cost or hassle.",
+    price: 1200,
+    originalPrice: 1500,
+    images: [
+      "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&h=600&fit=crop"
+    ],
+    category: "Beauty & Cosmetics",
+    vendor: "vendor-007",
+    stock: 35,
+    rating: 4.9,
+    reviews: 28,
+    tags: ["Press-On Nails", "Nude", "Gold Glitter", "Elegant", "Reusable", "Party", "Wedding"],
+    specifications: {
+      type: "Press-On Nails Set",
+      items: "10 premium press-on nails (various sizes)",
+      finish: "Glossy nude + glitter accent",
+      application: "Quick and easy, long-lasting hold",
+      reusable: "Can be reapplied with proper care",
+      perfectFor: "Special occasions, festive looks, everyday glam"
+    },
+    customerReviews: [
+      {
+        user: "3",
+        name: "Priya Sharma",
+        rating: 5,
+        comment: "Absolutely stunning! The nude color is perfect and the gold glitter adds just the right amount of sparkle. Easy to apply and lasted for over a week!",
+        createdAt: new Date()
+      },
+      {
+        user: "4",
+        name: "Anita Singh",
+        rating: 5,
+        comment: "Perfect for my wedding! The quality is amazing and they looked so elegant. Bani's attention to detail really shows in these nails.",
+        createdAt: new Date()
+      }
+    ],
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
   }
 ];
 
@@ -1547,6 +1593,64 @@ app.post('/api/auth/admin-login', (req, res) => {
   }
 });
 
+// Google OAuth endpoint
+app.post('/api/auth/google', (req, res) => {
+  try {
+    const { googleToken, email, name, picture } = req.body;
+    
+    // In a real implementation, you would verify the Google token here
+    // For now, we'll simulate a successful Google authentication
+    
+    // Check if user already exists
+    let user = mockUsers.find(u => u.email === email);
+    
+    if (!user) {
+      // Create new user from Google data
+      const newUser = {
+        id: `google_${Date.now()}`,
+        name: name || 'Google User',
+        email: email,
+        avatar: picture || 'https://via.placeholder.com/150',
+        role: 'customer',
+        provider: 'google',
+        isActive: true,
+        isVerified: true,
+        createdAt: new Date(),
+        lastLogin: new Date()
+      };
+      
+      mockUsers.push(newUser);
+      user = newUser;
+    } else {
+      // Update existing user's last login
+      user.lastLogin = new Date();
+      user.avatar = picture || user.avatar;
+    }
+    
+    const token = generateToken(user.id);
+    
+    res.json({
+      success: true,
+      message: 'Google authentication successful',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+        role: user.role,
+        provider: 'google'
+      }
+    });
+  } catch (error) {
+    console.error('Google auth error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Google authentication failed'
+    });
+  }
+});
+
 // Vendor dashboard routes
 app.get('/api/vendor/dashboard', auth, (req, res) => {
   try {
@@ -2226,7 +2330,229 @@ app.delete('/api/users/wishlist/:productId', auth, (req, res) => {
   }
 });
 
-// Users endpoint for admin dashboard
+// Admin Dashboard Stats
+app.get('/api/admin/dashboard', auth, (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin role required.' });
+    }
+    
+    const totalUsers = mockUsers.filter(u => u.role === 'customer').length;
+    const totalVendors = mockUsers.filter(u => u.role === 'vendor').length;
+    const totalProducts = mockProducts.length;
+    const totalOrders = mockOrders.length;
+    const totalRevenue = mockOrders.reduce((sum, order) => sum + order.total, 0);
+    const pendingApprovals = mockUsers.filter(u => u.role === 'vendor' && !u.isVerified).length;
+    const activeNegotiations = 8; // Mock value
+    const platformRating = 4.7; // Mock value
+    
+    res.json({
+      stats: {
+        totalUsers,
+        totalVendors,
+        totalProducts,
+        totalOrders,
+        totalRevenue,
+        pendingApprovals,
+        activeNegotiations,
+        platformRating
+      }
+    });
+  } catch (error) {
+    console.error('Get admin dashboard error:', error);
+    res.status(500).json({ message: 'Server error getting dashboard stats' });
+  }
+});
+
+// Admin Users endpoint
+app.get('/api/admin/users', auth, (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin role required.' });
+    }
+    
+    const { limit = 50, role, status, search } = req.query;
+    let users = mockUsers;
+    
+    // Filter by role if specified
+    if (role) {
+      users = users.filter(u => u.role === role);
+    }
+    
+    // Filter by status if specified
+    if (status) {
+      if (status === 'active') users = users.filter(u => u.isActive);
+      if (status === 'inactive') users = users.filter(u => !u.isActive);
+      if (status === 'banned') users = users.filter(u => u.isBanned);
+    }
+    
+    // Search filter
+    if (search) {
+      users = users.filter(u => 
+        u.name.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    
+    // Apply pagination
+    const startIndex = 0;
+    const endIndex = parseInt(limit);
+    const paginatedUsers = users.slice(startIndex, endIndex);
+    
+    // Remove sensitive data
+    const safeUsers = paginatedUsers.map(user => {
+      const { password, ...safeUser } = user;
+      return safeUser;
+    });
+    
+    res.json({
+      users: safeUsers,
+      pagination: {
+        currentPage: 1,
+        totalPages: Math.ceil(users.length / parseInt(limit)),
+        totalUsers: users.length,
+        hasNext: endIndex < users.length,
+        hasPrev: false
+      }
+    });
+  } catch (error) {
+    console.error('Get admin users error:', error);
+    res.status(500).json({ message: 'Server error getting users' });
+  }
+});
+
+// Admin Vendors endpoint
+app.get('/api/admin/vendors', auth, (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin role required.' });
+    }
+    
+    const { limit = 50, status, search } = req.query;
+    let vendors = mockUsers.filter(u => u.role === 'vendor');
+    
+    // Filter by status if specified
+    if (status) {
+      if (status === 'verified') vendors = vendors.filter(v => v.isVerified);
+      if (status === 'unverified') vendors = vendors.filter(v => !v.isVerified);
+      if (status === 'banned') vendors = vendors.filter(v => v.isBanned);
+    }
+    
+    // Search filter
+    if (search) {
+      vendors = vendors.filter(v => 
+        v.name.toLowerCase().includes(search.toLowerCase()) ||
+        v.email.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    
+    // Apply pagination
+    const startIndex = 0;
+    const endIndex = parseInt(limit);
+    const paginatedVendors = vendors.slice(startIndex, endIndex);
+    
+    // Remove sensitive data
+    const safeVendors = paginatedVendors.map(vendor => {
+      const { password, ...safeVendor } = vendor;
+      return safeVendor;
+    });
+    
+    res.json({
+      vendors: safeVendors,
+      pagination: {
+        currentPage: 1,
+        totalPages: Math.ceil(vendors.length / parseInt(limit)),
+        totalVendors: vendors.length,
+        hasNext: endIndex < vendors.length,
+        hasPrev: false
+      }
+    });
+  } catch (error) {
+    console.error('Get admin vendors error:', error);
+    res.status(500).json({ message: 'Server error getting vendors' });
+  }
+});
+
+// Update user status
+app.put('/api/admin/users/:id/status', auth, (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin role required.' });
+    }
+    
+    const { status } = req.body;
+    const userId = req.params.id;
+    
+    // Find user in mock data
+    const userIndex = mockUsers.findIndex(u => u.id === userId);
+    if (userIndex === -1) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Update user status
+    if (status === 'active') {
+      mockUsers[userIndex].isActive = true;
+      mockUsers[userIndex].isBanned = false;
+    } else if (status === 'inactive') {
+      mockUsers[userIndex].isActive = false;
+      mockUsers[userIndex].isBanned = false;
+    } else if (status === 'banned') {
+      mockUsers[userIndex].isActive = false;
+      mockUsers[userIndex].isBanned = true;
+    }
+    
+    res.json({
+      message: 'User status updated successfully',
+      user: {
+        id: mockUsers[userIndex].id,
+        name: mockUsers[userIndex].name,
+        email: mockUsers[userIndex].email,
+        role: mockUsers[userIndex].role,
+        isActive: mockUsers[userIndex].isActive,
+        isBanned: mockUsers[userIndex].isBanned
+      }
+    });
+  } catch (error) {
+    console.error('Update user status error:', error);
+    res.status(500).json({ message: 'Server error updating user status' });
+  }
+});
+
+// Update vendor status
+app.put('/api/admin/vendors/:id/status', auth, (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin role required.' });
+    }
+    
+    const { isVerified } = req.body;
+    const vendorId = req.params.id;
+    
+    // Find vendor in mock data
+    const vendorIndex = mockUsers.findIndex(u => u.id === vendorId && u.role === 'vendor');
+    if (vendorIndex === -1) {
+      return res.status(404).json({ message: 'Vendor not found' });
+    }
+    
+    // Update vendor verification status
+    mockUsers[vendorIndex].isVerified = isVerified;
+    
+    res.json({
+      message: 'Vendor verification status updated successfully',
+      vendor: {
+        id: mockUsers[vendorIndex].id,
+        name: mockUsers[vendorIndex].name,
+        email: mockUsers[vendorIndex].email,
+        isVerified: mockUsers[vendorIndex].isVerified
+      }
+    });
+  } catch (error) {
+    console.error('Update vendor status error:', error);
+    res.status(500).json({ message: 'Server error updating vendor status' });
+  }
+});
+
+// Users endpoint for admin dashboard (legacy)
 app.get('/api/users', auth, (req, res) => {
   try {
     // Only admin can access users list

@@ -41,161 +41,20 @@ const Negotiations = () => {
   const loadNegotiations = async () => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setNegotiations([
-        {
-          id: 'NEG-001',
-          product: {
-            id: 1,
-            name: 'Handcrafted Silver Necklace',
-            image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=200&h=200&fit=crop',
-            originalPrice: 2999,
-            currentPrice: 2499
-          },
-          vendor: {
-            id: 1,
-            name: 'Artisan Crafts Co.',
-            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'
-          },
-          customer: {
-            id: user.id,
-            name: user.name,
-            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face'
-          },
-          status: 'active',
-          proposedPrice: 2200,
-          counterPrice: 2300,
-          messages: [
-            {
-              id: 1,
-              sender: 'customer',
-              message: 'Hi! I\'m interested in this necklace. Would you consider ₹2200?',
-              timestamp: '2024-01-15T10:30:00Z',
-              type: 'offer'
-            },
-            {
-              id: 2,
-              sender: 'vendor',
-              message: 'Hello! Thank you for your interest. The best I can do is ₹2300. This is a handcrafted piece with premium materials.',
-              timestamp: '2024-01-15T11:15:00Z',
-              type: 'counter'
-            },
-            {
-              id: 3,
-              sender: 'customer',
-              message: 'That sounds fair. What about ₹2250? I can pay immediately.',
-              timestamp: '2024-01-15T11:45:00Z',
-              type: 'offer'
-            }
-          ],
-          createdAt: '2024-01-15T10:30:00Z',
-          updatedAt: '2024-01-15T11:45:00Z'
-        },
-        {
-          id: 'NEG-002',
-          product: {
-            id: 2,
-            name: 'Ceramic Vase Set',
-            image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop',
-            originalPrice: 2499,
-            currentPrice: 2499
-          },
-          vendor: {
-            id: 2,
-            name: 'Creative Home Studio',
-            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face'
-          },
-          customer: {
-            id: user.id,
-            name: user.name,
-            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face'
-          },
-          status: 'accepted',
-          proposedPrice: 2000,
-          finalPrice: 2100,
-          messages: [
-            {
-              id: 1,
-              sender: 'customer',
-              message: 'Hi! I love this vase set. Would ₹2000 work?',
-              timestamp: '2024-01-14T14:20:00Z',
-              type: 'offer'
-            },
-            {
-              id: 2,
-              sender: 'vendor',
-              message: 'Hi! Thanks for your interest. I can do ₹2100 for this set. It\'s a great deal for handcrafted ceramics.',
-              timestamp: '2024-01-14T15:30:00Z',
-              type: 'counter'
-            },
-            {
-              id: 3,
-              sender: 'customer',
-              message: 'Deal! ₹2100 works for me. How do I proceed with payment?',
-              timestamp: '2024-01-14T16:00:00Z',
-              type: 'acceptance'
-            },
-            {
-              id: 4,
-              sender: 'vendor',
-              message: 'Perfect! I\'ll send you the payment link shortly. Thank you!',
-              timestamp: '2024-01-14T16:15:00Z',
-              type: 'confirmation'
-            }
-          ],
-          createdAt: '2024-01-14T14:20:00Z',
-          updatedAt: '2024-01-14T16:15:00Z'
-        },
-        {
-          id: 'NEG-003',
-          product: {
-            id: 3,
-            name: 'Wooden Wall Art',
-            image: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=200&h=200&fit=crop',
-            originalPrice: 4599,
-            currentPrice: 4599
-          },
-          vendor: {
-            id: 3,
-            name: 'Handmade Treasures',
-            avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face'
-          },
-          customer: {
-            id: user.id,
-            name: user.name,
-            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face'
-          },
-          status: 'rejected',
-          proposedPrice: 3500,
-          messages: [
-            {
-              id: 1,
-              sender: 'customer',
-              message: 'Hi! This wall art is beautiful. Would you consider ₹3500?',
-              timestamp: '2024-01-13T09:15:00Z',
-              type: 'offer'
-            },
-            {
-              id: 2,
-              sender: 'vendor',
-              message: 'Hello! I appreciate your interest, but ₹3500 is too low for this hand-carved piece. The minimum I can accept is ₹4200.',
-              timestamp: '2024-01-13T10:30:00Z',
-              type: 'counter'
-            },
-            {
-              id: 3,
-              sender: 'customer',
-              message: 'I understand. That\'s still a bit high for my budget. Maybe next time!',
-              timestamp: '2024-01-13T11:00:00Z',
-              type: 'rejection'
-            }
-          ],
-          createdAt: '2024-01-13T09:15:00Z',
-          updatedAt: '2024-01-13T11:00:00Z'
+      // Real API call
+      const response = await fetch('/api/negotiations', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
         }
-      ]);
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to load negotiations');
+      }
+      
+      const data = await response.json();
+      setNegotiations(data.negotiations || []);
     } catch (error) {
       toast.error('Failed to load negotiations');
     } finally {
@@ -249,40 +108,79 @@ const Negotiations = () => {
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedNegotiation) return;
 
-    const message = {
-      id: Date.now(),
-      sender: user.role === 'vendor' ? 'vendor' : 'customer',
-      message: newMessage.trim(),
-      timestamp: new Date().toISOString(),
-      type: 'message'
-    };
+    try {
+      const response = await fetch(`/api/negotiations/${selectedNegotiation.id}/message`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: newMessage.trim(),
+          type: 'message'
+        })
+      });
 
-    setNegotiations(prev => prev.map(neg => 
-      neg.id === selectedNegotiation.id 
-        ? { ...neg, messages: [...neg.messages, message], updatedAt: new Date().toISOString() }
-        : neg
-    ));
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
 
-    setNewMessage('');
-    toast.success('Message sent!');
+      setNewMessage('');
+      toast.success('Message sent!');
+      
+      // Reload negotiations to get updated data
+      loadNegotiations();
+    } catch (error) {
+      toast.error('Failed to send message');
+    }
   };
 
-  const handleAcceptOffer = (negotiationId) => {
-    setNegotiations(prev => prev.map(neg => 
-      neg.id === negotiationId 
-        ? { ...neg, status: 'accepted', finalPrice: neg.counterPrice || neg.proposedPrice }
-        : neg
-    ));
-    toast.success('Offer accepted!');
+  const handleAcceptOffer = async (negotiationId) => {
+    try {
+      const response = await fetch(`/api/negotiations/${negotiationId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: 'accepted'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to accept offer');
+      }
+
+      toast.success('Offer accepted!');
+      loadNegotiations(); // Reload to get updated data
+    } catch (error) {
+      toast.error('Failed to accept offer');
+    }
   };
 
-  const handleRejectOffer = (negotiationId) => {
-    setNegotiations(prev => prev.map(neg => 
-      neg.id === negotiationId 
-        ? { ...neg, status: 'rejected' }
-        : neg
-    ));
-    toast.success('Offer rejected');
+  const handleRejectOffer = async (negotiationId) => {
+    try {
+      const response = await fetch(`/api/negotiations/${negotiationId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: 'rejected'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reject offer');
+      }
+
+      toast.success('Offer rejected.');
+      loadNegotiations(); // Reload to get updated data
+    } catch (error) {
+      toast.error('Failed to reject offer');
+    }
   };
 
   const NegotiationModal = () => {

@@ -189,4 +189,61 @@ router.put('/:id/status', auth, [
   }
 });
 
+// @route   POST /api/negotiations/:id/message
+// @desc    Send a message in a negotiation
+// @access  Private
+router.post('/:id/message', auth, [
+  body('message').isLength({ min: 1, max: 500 }).withMessage('Message must be between 1 and 500 characters'),
+  body('type').optional().isIn(['message', 'offer', 'counter', 'acceptance', 'rejection']).withMessage('Invalid message type')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { message, type = 'message' } = req.body;
+    const negotiation = await ChatMessage.findById(req.params.id);
+
+    if (!negotiation) {
+      return res.status(404).json({ message: 'Negotiation not found' });
+    }
+
+    // Check if user is part of this negotiation
+    if (req.user.role !== 'admin' && 
+        negotiation.buyerId.toString() !== req.user._id.toString() && 
+        negotiation.sellerId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to send message in this negotiation' });
+    }
+
+    // Create new message
+    const newMessage = {
+      senderId: req.user._id,
+      message: message,
+      type: type,
+      timestamp: new Date()
+    };
+
+    // Add message to negotiation
+    if (!negotiation.messages) {
+      negotiation.messages = [];
+    }
+    negotiation.messages.push(newMessage);
+    negotiation.updatedAt = new Date();
+
+    await negotiation.save();
+
+    // Populate the new message with sender info
+    await negotiation.populate('messages.senderId', 'name email');
+
+    res.json({
+      message: 'Message sent successfully',
+      negotiation
+    });
+  } catch (error) {
+    console.error('Send message error:', error);
+    res.status(500).json({ message: 'Server error while sending message' });
+  }
+});
+
 module.exports = router;

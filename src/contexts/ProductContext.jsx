@@ -33,6 +33,8 @@ export const ProductProvider = ({ children }) => {
         vendorsAPI.getVendors()
       ])
       
+      console.log('API Response - Products loaded:', productsResponse?.products?.length || 0)
+      
       const normalizeVendor = (v) => ({
         ...v,
         id: v.id || v._id
@@ -43,6 +45,8 @@ export const ProductProvider = ({ children }) => {
         id: p.id || p._id,
         // Ensure a convenient image field exists
         image: p.image || (Array.isArray(p.images) ? p.images[0] : undefined),
+        // Preserve featured property
+        featured: Boolean(p.featured),
         // Normalize nested vendor
         vendor: typeof p.vendor === 'object' && p.vendor !== null
           ? { ...p.vendor, id: p.vendor.id || p.vendor._id }
@@ -51,6 +55,8 @@ export const ProductProvider = ({ children }) => {
 
       let rawProducts = productsResponse.products || productsResponse || []
       let rawVendors = vendorsResponse.vendors || vendorsResponse || []
+
+      console.log('Raw products loaded:', rawProducts.length, 'Featured:', rawProducts.filter(p => p.featured).length)
 
       // Fallback to demo data in dev if API returns empty
       const allowDemo = (import.meta.env.VITE_ALLOW_DEMO_DATA === 'true') || import.meta.env.DEV
@@ -62,6 +68,8 @@ export const ProductProvider = ({ children }) => {
 
       const normalizedVendors = rawVendors.map(normalizeVendor)
       const normalizedProducts = rawProducts.map(normalizeProduct)
+      
+      console.log('Products normalized:', normalizedProducts.length, 'Featured:', normalizedProducts.filter(p => p.featured).length)
 
       setProducts(normalizedProducts)
       setVendors(normalizedVendors)

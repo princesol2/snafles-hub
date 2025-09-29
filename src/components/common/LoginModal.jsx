@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { X, Mail, Lock, User, Eye, EyeOff, Check } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import PrivacyPolicyModal from '../modals/PrivacyPolicyModal';
+import TermsOfServiceModal from '../modals/TermsOfServiceModal';
 
 const LoginModal = ({ isOpen, onClose, redirectTo = '/' }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login, register } = useAuth();
+  const { login, register, googleLogin } = useAuth();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -17,6 +19,10 @@ const LoginModal = ({ isOpen, onClose, redirectTo = '/' }) => {
     password: '',
     confirmPassword: ''
   });
+
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
+  const [showTermsOfService, setShowTermsOfService] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -28,21 +34,23 @@ const LoginModal = ({ isOpen, onClose, redirectTo = '/' }) => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      // Simulate Google OAuth flow
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock Google user data
-      const googleUser = {
-        id: 'google_' + Date.now(),
-        name: 'Google User',
-        email: 'user@gmail.com',
-        avatar: 'https://via.placeholder.com/150',
-        provider: 'google'
+      // For demo purposes, we'll simulate Google OAuth with mock data
+      const mockGoogleData = {
+        googleToken: 'mock_google_token_' + Date.now(),
+        email: 'demo@gmail.com',
+        name: 'Demo Google User',
+        picture: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
       };
       
-      toast.success(`Welcome, ${googleUser.name}!`);
-      onClose();
-      navigate(redirectTo);
+      const result = await googleLogin(mockGoogleData);
+      
+      if (result.success) {
+        toast.success(`Welcome, ${result.user.name}!`);
+        onClose();
+        navigate(redirectTo);
+      } else {
+        toast.error(result.message || 'Google login failed. Please try again.');
+      }
     } catch (error) {
       toast.error('Google login failed. Please try again.');
     } finally {
@@ -52,6 +60,13 @@ const LoginModal = ({ isOpen, onClose, redirectTo = '/' }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Check if user agreed to terms (only for registration)
+    if (!isLogin && !agreedToTerms) {
+      toast.error('Please agree to our Terms of Service and Privacy Policy');
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -201,10 +216,49 @@ const LoginModal = ({ isOpen, onClose, redirectTo = '/' }) => {
             </div>
           )}
 
+          {/* User Agreement Checkbox - Only show for registration */}
+          {!isLogin && (
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setAgreedToTerms(!agreedToTerms)}
+                  className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                    agreedToTerms 
+                      ? 'bg-blue-600 border-blue-600 text-white' 
+                      : 'border-gray-300 hover:border-blue-500'
+                  }`}
+                >
+                  {agreedToTerms && <Check size={12} />}
+                </button>
+                <div className="text-sm text-gray-600">
+                  <p>
+                    I agree to the{' '}
+                    <button
+                      type="button"
+                      onClick={() => setShowTermsOfService(true)}
+                      className="text-blue-600 hover:underline font-medium"
+                    >
+                      Terms of Service
+                    </button>
+                    {' '}and{' '}
+                    <button
+                      type="button"
+                      onClick={() => setShowPrivacyPolicy(true)}
+                      className="text-blue-600 hover:underline font-medium"
+                    >
+                      Privacy Policy
+                    </button>
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={loading}
-            className="w-full btn btn-primary py-3"
+            disabled={loading || (!isLogin && !agreedToTerms)}
+            className="w-full btn btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
           </button>
@@ -249,6 +303,18 @@ const LoginModal = ({ isOpen, onClose, redirectTo = '/' }) => {
           </div>
         </form>
       </div>
+
+      {/* Privacy Policy Modal */}
+      <PrivacyPolicyModal 
+        isOpen={showPrivacyPolicy} 
+        onClose={() => setShowPrivacyPolicy(false)} 
+      />
+
+      {/* Terms of Service Modal */}
+      <TermsOfServiceModal 
+        isOpen={showTermsOfService} 
+        onClose={() => setShowTermsOfService(false)} 
+      />
     </div>
   );
 };

@@ -27,12 +27,17 @@ export const CartProvider = ({ children }) => {
           item.id && 
           item.name && 
           typeof item.price === 'number' && 
-          typeof item.quantity === 'number'
+          typeof item.quantity === 'number' &&
+          item.quantity > 0 &&
+          item.quantity <= MAX_CART_ITEMS
         )
         setCart(validCart)
+        console.log('Cart loaded from localStorage:', validCart.length, 'items')
       } catch (error) {
         console.error('Error parsing saved cart:', error)
         setCart([])
+        // Clear corrupted cart data
+        localStorage.removeItem('snaflesCart')
       }
     }
     setLoading(false)
@@ -41,7 +46,17 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     // Save cart to localStorage whenever it changes
     if (!loading) {
-      localStorage.setItem('snaflesCart', JSON.stringify(cart))
+      try {
+        localStorage.setItem('snaflesCart', JSON.stringify(cart))
+        console.log('Cart saved to localStorage:', cart.length, 'items')
+      } catch (error) {
+        console.error('Error saving cart to localStorage:', error)
+        // Handle localStorage quota exceeded or other errors
+        if (error.name === 'QuotaExceededError') {
+          console.warn('localStorage quota exceeded, clearing old cart data')
+          localStorage.removeItem('snaflesCart')
+        }
+      }
     }
   }, [cart, loading])
 
@@ -92,6 +107,10 @@ export const CartProvider = ({ children }) => {
       return
     }
     
+    if (quantity > MAX_CART_ITEMS) {
+      throw new Error(`Cannot add more than ${MAX_CART_ITEMS} items of this product.`)
+    }
+    
     setCart(prevCart =>
       prevCart.map(item =>
         item.id === productId
@@ -106,11 +125,15 @@ export const CartProvider = ({ children }) => {
   }
 
   const getCartTotal = () => {
-    return cart.reduce((total, item) => total + ((item.price || 0) * item.quantity), 0)
+    return cart.reduce((total, item) => {
+      const price = item.price || 0
+      const quantity = item.quantity || 0
+      return total + (price * quantity)
+    }, 0)
   }
 
   const getCartItemCount = () => {
-    return cart.reduce((total, item) => total + item.quantity, 0)
+    return cart.reduce((total, item) => total + (item.quantity || 0), 0)
   }
 
   const isInCart = (productId) => {
@@ -137,6 +160,25 @@ export const CartProvider = ({ children }) => {
     return cart.length < MAX_CART_ITEMS && quantity <= MAX_CART_ITEMS
   }
 
+  const cleanCart = () => {
+    setCart(prevCart => {
+      const cleanedCart = prevCart.filter(item => 
+        item && 
+        item.id && 
+        item.name && 
+        typeof item.price === 'number' && 
+        typeof item.quantity === 'number' &&
+        item.quantity > 0 &&
+        item.quantity <= MAX_CART_ITEMS &&
+        item.price >= 0
+      )
+      if (cleanedCart.length !== prevCart.length) {
+        console.log('Cleaned cart: removed', prevCart.length - cleanedCart.length, 'invalid items')
+      }
+      return cleanedCart
+    })
+  }
+
   const value = {
     cart,
     loading,
@@ -150,7 +192,8 @@ export const CartProvider = ({ children }) => {
     getCartItem,
     getCartLimit,
     isCartFull,
-    canAddToCart
+    canAddToCart,
+    cleanCart
   }
 
   return (

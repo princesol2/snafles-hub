@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Search, ShoppingCart, User, Menu, X, Heart, Store, Shield, MessageSquare, Settings } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCart } from '../../contexts/CartContext'
+import Logo from '../common/Logo'
 
 const Navbar = () => {
   console.log('Navbar component rendering...')
@@ -64,17 +65,12 @@ const Navbar = () => {
       <nav className="container py-6">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-md group-hover:shadow-glow transition-all duration-300">
-              S
-            </div>
-            <span className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-blue-800 bg-clip-text text-transparent">
-              SNAFLES Hub
-            </span>
+          <Link to="/" className="group">
+            <Logo size="default" className="group-hover:scale-105 transition-transform duration-300" />
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-8">
+          <div className="hidden lg:flex items-center space-x-8 ml-12">
             <Link to="/" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
               Home
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
@@ -154,12 +150,6 @@ const Navbar = () => {
                     <Link to="/orders" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
                       <Shield size={16} />
                       <span>Orders</span>
-                    </Link>
-                    <Link to="/refund" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
-                      <span>Request Refund</span>
-                    </Link>
-                    <Link to="/exchange" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
-                      <span>Request Exchange</span>
                     </Link>
                     <Link to="/wishlist" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
                       <Heart size={16} />

@@ -183,6 +183,14 @@ export const authAPI = {
       method: 'POST',
     });
   },
+
+  // Google OAuth login
+  googleLogin: async (googleData) => {
+    return apiRequest('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify(googleData),
+    });
+  },
 };
 
 // Products API

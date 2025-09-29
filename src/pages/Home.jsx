@@ -11,6 +11,8 @@ const Home = () => {
   const { addToCart, isInCart } = useCart()
   const { user } = useAuth()
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [currentFeaturedSlide, setCurrentFeaturedSlide] = useState(0)
+  const [showFeaturedOnly, setShowFeaturedOnly] = useState(false)
 
   // Wishlist functionality using localStorage
   const addToWishlist = (productId) => {
@@ -114,7 +116,13 @@ const Home = () => {
   ]
 
   // Filter products for different sections
-  const featuredProducts = products?.filter(product => product.featured) || []
+  const featuredProducts = products?.filter(product => product.featured === true) || []
+  
+  // Get products to display in slider based on filter state
+  const displayProducts = showFeaturedOnly ? featuredProducts : products || []
+  
+  // Debug: Check if products are loaded
+  console.log('Home - Products:', products?.length, 'Featured:', featuredProducts?.length, 'Display:', displayProducts?.length, 'Loading:', loading)
   const newArrivals = products?.filter(product => {
     const createdAt = new Date(product.createdAt)
     const weekAgo = new Date()
@@ -124,7 +132,7 @@ const Home = () => {
   const bestSellers = products?.filter(product => product.rating >= 4.5) || []
   const deals = products?.filter(product => product.originalPrice && product.originalPrice > product.price) || []
 
-  // Auto-slide functionality
+  // Auto-slide functionality for hero
   useEffect(() => {
     if (heroSlides && heroSlides.length > 0) {
       const interval = setInterval(() => {
@@ -134,6 +142,17 @@ const Home = () => {
       return () => clearInterval(interval)
     }
   }, [heroSlides])
+
+  // Auto-slide functionality for featured products
+  useEffect(() => {
+    if (displayProducts && displayProducts.length > 0) {
+      const interval = setInterval(() => {
+        setCurrentFeaturedSlide((prev) => (prev === Math.ceil(displayProducts.length / 4) - 1 ? 0 : prev + 1))
+      }, 4000) // Change slide every 4 seconds
+
+      return () => clearInterval(interval)
+    }
+  }, [displayProducts])
 
   const ProductCard = ({ product, badge = null }) => (
     <div className="card-premium hover-lift overflow-hidden group">
@@ -282,23 +301,117 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Featured Products */}
+      {/* Featured Products Slider */}
       <section className="py-20 bg-gradient-to-br from-gray-50 to-blue-50/30">
         <div className="container">
           <div className="text-center mb-16">
-            <h2 className="heading-2 mb-4">Featured Products</h2>
-            <p className="text-gray-600 text-lg">Handpicked items from our best sellers</p>
+            <h2 className="heading-2 mb-4">
+              {showFeaturedOnly ? 'Featured Products' : 'All Products'}
+            </h2>
+            <p className="text-gray-600 text-lg">
+              {showFeaturedOnly ? 'Handpicked items from our best sellers' : 'Browse our complete collection'}
+            </p>
+            
+            {/* Featured Products Filter Button */}
+            <div className="mt-6">
+              <button
+                onClick={() => setShowFeaturedOnly(!showFeaturedOnly)}
+                className={`px-6 py-3 rounded-full font-medium transition-all duration-200 ${
+                  showFeaturedOnly
+                    ? 'bg-blue-600 text-white shadow-lg hover:bg-blue-700'
+                    : 'bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50'
+                }`}
+              >
+                {showFeaturedOnly ? 'Show All Products' : 'Show Featured Only'}
+              </button>
+              {showFeaturedOnly && (
+                <p className="text-sm text-gray-500 mt-2">
+                  Showing {featuredProducts.length} featured products
+                </p>
+              )}
+            </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts?.slice(0, 4).map((product) => (
-              <ProductCard key={product.id} product={product} badge="Featured" />
-            ))}
-          </div>
+          {displayProducts && displayProducts.length > 0 ? (
+            <div className="relative">
+              {/* Slider Container */}
+              <div className="overflow-hidden">
+                <div 
+                  className="flex transition-transform duration-500 ease-in-out"
+                  style={{ 
+                    transform: `translateX(-${currentFeaturedSlide * 100}%)`,
+                    width: `${Math.ceil(displayProducts.length / 4) * 100}%`
+                  }}
+                >
+                  {Array.from({ length: Math.ceil(displayProducts.length / 4) }).map((_, slideIndex) => (
+                    <div key={slideIndex} className="w-full flex-shrink-0">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {displayProducts
+                          .slice(slideIndex * 4, (slideIndex + 1) * 4)
+                          .map((product) => (
+                            <ProductCard 
+                              key={product.id} 
+                              product={product} 
+                              badge={product.featured ? "Featured" : null} 
+                            />
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Navigation Arrows */}
+              {displayProducts.length > 4 && (
+                <>
+                  <button
+                    onClick={() => setCurrentFeaturedSlide(prev => 
+                      prev === 0 ? Math.ceil(displayProducts.length / 4) - 1 : prev - 1
+                    )}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all duration-200 hover:scale-110 z-10"
+                  >
+                    <ChevronLeft className="w-6 h-6 text-gray-700" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentFeaturedSlide(prev => 
+                      prev === Math.ceil(displayProducts.length / 4) - 1 ? 0 : prev + 1
+                    )}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all duration-200 hover:scale-110 z-10"
+                  >
+                    <ChevronRight className="w-6 h-6 text-gray-700" />
+                  </button>
+                </>
+              )}
+
+              {/* Dots Indicator */}
+              {displayProducts.length > 4 && (
+                <div className="flex justify-center mt-8 space-x-2">
+                  {Array.from({ length: Math.ceil(displayProducts.length / 4) }).map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentFeaturedSlide(index)}
+                      className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                        index === currentFeaturedSlide 
+                          ? 'bg-blue-600 scale-125' 
+                          : 'bg-gray-300 hover:bg-gray-400'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">No featured products available at the moment.</p>
+            </div>
+          )}
           
           <div className="text-center mt-12">
-            <Link to="/products" className="btn btn-outline">
-              View All Products
+            <Link 
+              to={showFeaturedOnly ? "/products?featured=true" : "/products"} 
+              className="btn btn-outline"
+            >
+              {showFeaturedOnly ? "View All Featured Products" : "View All Products"}
             </Link>
           </div>
         </div>

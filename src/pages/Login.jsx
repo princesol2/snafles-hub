@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Eye, EyeOff, Mail, Lock, User, Phone, MapPin } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, User, Phone, MapPin, Check } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
+import PrivacyPolicyModal from '../components/modals/PrivacyPolicyModal'
+import TermsOfServiceModal from '../components/modals/TermsOfServiceModal'
+import Logo from '../components/common/Logo'
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { login, register } = useAuth()
+  const { login, register, googleLogin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -27,6 +30,10 @@ const Login = () => {
     country: 'India'
   })
 
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
+  const [showTermsOfService, setShowTermsOfService] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -37,23 +44,34 @@ const Login = () => {
   const handleGoogleLogin = async () => {
     setLoading(true)
     try {
-      // Simulate Google OAuth flow
+      // For demo purposes, we'll simulate Google OAuth with mock data
       // In a real implementation, you would use Google's OAuth library
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // Mock Google user data
-      const googleUser = {
-        id: 'google_' + Date.now(),
-        name: 'Google User',
-        email: 'user@gmail.com',
-        avatar: 'https://via.placeholder.com/150',
-        provider: 'google'
+      const mockGoogleData = {
+        googleToken: 'mock_google_token_' + Date.now(),
+        email: 'googleuser@gmail.com',
+        name: 'Google Demo User',
+        picture: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
       }
       
-      // Simulate successful login
-      toast.success(`Welcome, ${googleUser.name}!`)
-      navigate(from, { replace: true })
+      console.log('Starting Google login with:', mockGoogleData)
+      const result = await googleLogin(mockGoogleData)
+      console.log('Google login result:', result)
+      
+      if (result && result.success) {
+        console.log('Google login successful, user:', result.user)
+        toast.success(`Welcome, ${result.user.name}!`)
+        
+        // Wait a moment for state to update
+        setTimeout(() => {
+          console.log('Navigating to:', from)
+          navigate(from, { replace: true })
+        }, 100)
+      } else {
+        console.error('Google login failed:', result)
+        toast.error(result?.message || 'Google login failed. Please try again.')
+      }
     } catch (error) {
+      console.error('Google login error:', error)
       toast.error('Google login failed. Please try again.')
     } finally {
       setLoading(false)
@@ -62,6 +80,13 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Check if user agreed to terms (only for registration)
+    if (!isLogin && !agreedToTerms) {
+      toast.error('Please agree to our Terms of Service and Privacy Policy')
+      return
+    }
+    
     setLoading(true)
 
     try {
@@ -115,11 +140,8 @@ const Login = () => {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center text-white font-bold text-2xl">
-              S
-            </div>
-            <span className="text-3xl font-bold text-primary">SNAFLEShub</span>
+          <div className="flex items-center justify-center mb-6">
+            <Logo size="large" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900">
             {isLogin ? 'Welcome back' : 'Create your account'}
@@ -319,11 +341,50 @@ const Login = () => {
             )}
           </div>
 
+          {/* User Agreement Checkbox - Only show for registration */}
+          {!isLogin && (
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setAgreedToTerms(!agreedToTerms)}
+                  className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                    agreedToTerms 
+                      ? 'bg-blue-600 border-blue-600 text-white' 
+                      : 'border-gray-300 hover:border-blue-500'
+                  }`}
+                >
+                  {agreedToTerms && <Check size={12} />}
+                </button>
+                <div className="text-sm text-gray-600">
+                  <p>
+                    I agree to the{' '}
+                    <button
+                      type="button"
+                      onClick={() => setShowTermsOfService(true)}
+                      className="text-blue-600 hover:underline font-medium"
+                    >
+                      Terms of Service
+                    </button>
+                    {' '}and{' '}
+                    <button
+                      type="button"
+                      onClick={() => setShowPrivacyPolicy(true)}
+                      className="text-blue-600 hover:underline font-medium"
+                    >
+                      Privacy Policy
+                    </button>
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <button
               type="submit"
-              disabled={loading}
-              className="w-full btn btn-primary py-3 text-lg"
+              disabled={loading || (!isLogin && !agreedToTerms)}
+              className="w-full btn btn-primary py-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
             </button>
@@ -373,11 +434,33 @@ const Login = () => {
 
         <div className="text-center text-sm text-gray-600">
           By continuing, you agree to our{' '}
-          <a href="#" className="text-primary hover:underline">Terms of Service</a>
+          <button 
+            onClick={() => setShowTermsOfService(true)}
+            className="text-primary hover:underline"
+          >
+            Terms of Service
+          </button>
           {' '}and{' '}
-          <a href="#" className="text-primary hover:underline">Privacy Policy</a>
+          <button 
+            onClick={() => setShowPrivacyPolicy(true)}
+            className="text-primary hover:underline"
+          >
+            Privacy Policy
+          </button>
         </div>
       </div>
+
+      {/* Privacy Policy Modal */}
+      <PrivacyPolicyModal 
+        isOpen={showPrivacyPolicy} 
+        onClose={() => setShowPrivacyPolicy(false)} 
+      />
+
+      {/* Terms of Service Modal */}
+      <TermsOfServiceModal 
+        isOpen={showTermsOfService} 
+        onClose={() => setShowTermsOfService(false)} 
+      />
     </div>
   )
 }

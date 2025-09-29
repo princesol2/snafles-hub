@@ -149,6 +149,22 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token')
   }
 
+  // Google OAuth login
+  const googleLogin = async (googleData) => {
+    try {
+      console.log('Google login attempt with data:', googleData)
+      const response = await authAPI.googleLogin(googleData)
+      console.log('Google login response:', response)
+      localStorage.setItem('token', response.token)
+      setUser(response.user)
+      console.log('User set in context:', response.user)
+      return { success: true, user: response.user }
+    } catch (error) {
+      console.error('Google login error:', error)
+      return { success: false, message: error.message || 'Google login failed. Please try again.' }
+    }
+  }
+
   const updateProfile = async (updatedData) => {
     try {
       const response = await authAPI.updateProfile(updatedData)
@@ -167,7 +183,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateProfile,
     loginVendor,
-    registerVendor
+    registerVendor,
+    googleLogin
   }
 
   return (
