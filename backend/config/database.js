@@ -8,10 +8,26 @@ const MAX_DELAY_MS = 30000; // cap at 30s
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const connectDB = async () => {
-  // For development, we'll use mock data instead of MongoDB
-  console.log('🔧 Running in development mode with mock data');
-  console.log('📝 Note: MongoDB connection disabled for demo purposes');
-  return null;
+  let attempt = 0;
+  while (attempt <= MAX_RETRIES) {
+    try {
+      attempt += 1;
+      await mongoose.connect(MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      console.log('✅ MongoDB connected');
+      return mongoose.connection;
+    } catch (err) {
+      const delayMs = Math.min(BASE_DELAY_MS * attempt, MAX_DELAY_MS);
+      console.error(`MongoDB connection failed (attempt ${attempt}/${MAX_RETRIES}). Retrying in ${delayMs}ms`, err?.message || err);
+      if (attempt >= MAX_RETRIES) {
+        console.error('❌ Could not connect to MongoDB after retries');
+        throw err;
+      }
+      await delay(delayMs);
+    }
+  }
 };
 
 // Helpful connection state logs

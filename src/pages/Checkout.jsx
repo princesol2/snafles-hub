@@ -38,6 +38,7 @@ const Checkout = () => {
     cvv: '',
     nameOnCard: ''
   })
+  const [redeemPoints, setRedeemPoints] = useState(0)
 
   // Handle direct product purchase
   useEffect(() => {
@@ -59,6 +60,8 @@ const Checkout = () => {
   const shipping = subtotal > 999 ? 0 : 99
   const tax = Math.round(subtotal * 0.18)
   const total = subtotal + shipping + tax
+  const pointsApplicable = Math.max(0, Math.min(Number(redeemPoints) || 0, user?.loyaltyPoints || 0, total))
+  const effectiveTotal = Math.max(0, total - pointsApplicable)
 
   const handleShippingChange = (e) => {
     setShippingInfo({
@@ -95,6 +98,7 @@ const Checkout = () => {
         items: orderItems,
         shipping: shippingInfo,
         payment: paymentInfo,
+        redeemPoints: pointsApplicable,
         user: {
           id: user.id,
           name: user.name,
@@ -109,7 +113,7 @@ const Checkout = () => {
       // Process payment
       const paymentResponse = await processPayment(order.id, {
         method: paymentInfo.method,
-        amount: total,
+        amount: effectiveTotal,
         ...paymentInfo
       })
 
@@ -319,7 +323,7 @@ const Checkout = () => {
                   
 
                   <PaymentMethodSelector
-                    amount={total}
+                    amount={effectiveTotal}
                     onSuccess={(paymentData) => {
                       console.log('Payment successful:', paymentData);
                       handlePlaceOrder();
@@ -439,6 +443,33 @@ const Checkout = () => {
                     <span>Total</span>
                     <span>₹{total.toLocaleString()}</span>
                   </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <h4 className="font-semibold mb-4">Snapples Points</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Available</span>
+                    <span className="text-sm font-semibold">{user?.loyaltyPoints || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Redeem now</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={user?.loyaltyPoints || 0}
+                      value={redeemPoints}
+                      onChange={(e)=>setRedeemPoints(e.target.value)}
+                      className="w-28 input text-right"
+                    />
+                  </div>
+                  {pointsApplicable > 0 && (
+                    <div className="flex items-center justify-between text-green-600">
+                      <span className="text-sm">Applied now</span>
+                      <span className="font-semibold">-₹{pointsApplicable}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

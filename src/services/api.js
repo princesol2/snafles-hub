@@ -38,13 +38,6 @@ const apiRequest = async (endpoint, options = {}) => {
     }
 
     if (!response.ok) {
-      // Dev fallback: ease local demos when backend auth isn’t ready
-      const isDev = import.meta.env.DEV || import.meta.env.VITE_ALLOW_DEMO_LOGIN === 'true';
-      if (response.status === 401 && isDev) {
-        if (endpoint.startsWith('/orders')) {
-          return { orders: [] };
-        }
-      }
       const message = data?.message || data?.error || `HTTP ${response.status}`;
       throw new Error(message);
     }
@@ -351,6 +344,26 @@ export const uploadAPI = {
   },
 };
 
+// Second-Hand API
+export const secondhandAPI = {
+  getProducts: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/secondhand${queryString ? `?${queryString}` : ''}`);
+  },
+  getProduct: async (id) => {
+    return apiRequest(`/secondhand/${id}`);
+  },
+  createProduct: async (data) => {
+    return apiRequest('/secondhand', { method: 'POST', body: JSON.stringify(data) });
+  },
+  updateProduct: async (id, data) => {
+    return apiRequest(`/secondhand/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
+  deleteProduct: async (id) => {
+    return apiRequest(`/secondhand/${id}`, { method: 'DELETE' });
+  },
+};
+
 // Chat API
 export const chatAPI = {
   // Get messages for a product/negotiation
@@ -439,22 +452,17 @@ export const reviewsAPI = {
 
 // Rewards API
 export const rewardsAPI = {
-  // Get user rewards/points
-  getUserRewards: async () => {
-    return apiRequest('/rewards');
+  getPoints: async () => {
+    return apiRequest('/rewards/points');
   },
-
-  // Get helper points
-  getHelperPoints: async () => {
-    return apiRequest('/rewards/helper-points');
+  getAvailable: async () => {
+    return apiRequest('/rewards/available');
   },
-
-  // Redeem points
-  redeemPoints: async (redemptionData) => {
-    return apiRequest('/rewards/redeem', {
-      method: 'POST',
-      body: JSON.stringify(redemptionData),
-    });
+  getRedeemed: async () => {
+    return apiRequest('/rewards/redeemed');
+  },
+  redeem: async (rewardId) => {
+    return apiRequest(`/rewards/redeem/${rewardId}`, { method: 'POST' });
   },
 };
 

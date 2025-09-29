@@ -83,6 +83,10 @@ const Navbar = () => {
               Vendors
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
             </Link>
+            <Link to="/second-hand" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
+              Second-Hand
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+            </Link>
             {user && (
               <Link to="/wishlist" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
                 Wishlist
@@ -242,6 +246,9 @@ const Navbar = () => {
               </Link>
               <Link to="/vendors" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
                 Vendors
+              </Link>
+              <Link to="/second-hand" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
+                Second-Hand
               </Link>
               <Link to="/wishlist" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
                 Wishlist

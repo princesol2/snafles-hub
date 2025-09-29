@@ -86,7 +86,7 @@ const productSchema = new mongoose.Schema({
   },
   approved: {
     type: Boolean,
-    default: true
+    default: false
   },
   negotiable: {
     type: Boolean,

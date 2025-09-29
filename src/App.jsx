@@ -55,6 +55,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import AuthGuard from './components/routing/AuthGuard'
 import NotFound from './pages/NotFound'
+import SecondHand from './pages/SecondHand'
 
 function App() {
   console.log('App component rendering...')
@@ -89,6 +90,11 @@ function App() {
                       <Route path="/vendors" element={
                         <AuthGuard requireAuth={true}>
                           <Vendors />
+                        </AuthGuard>
+                      } />
+                      <Route path="/second-hand" element={
+                        <AuthGuard requireAuth={false} guestAllowed={true}>
+                          <SecondHand />
                         </AuthGuard>
                       } />
                       <Route path="/vendor/:id" element={
@@ -195,8 +201,7 @@ function App() {
                   <Route path="/shopping-mascot-demo" element={<ShoppingMascotDemo />} />
                   
                   <Route path="*" element={<NotFound />} />
-+
-+                </Routes>
+                </Routes>
               </main>
               <Footer />
               <Toaster position="top-right" />
@@ -210,4 +215,3 @@ function App() {
   }
 
 export default App
-

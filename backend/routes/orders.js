@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -76,7 +77,7 @@ router.post('/', auth, [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { items, shipping, payment, coupon } = req.body;
+    const { items, shipping, payment, coupon, redeemPoints = 0 } = req.body;
 
     // Validate and get product details
     const orderItems = [];
@@ -111,7 +112,22 @@ router.post('/', auth, [
     const shippingCost = subtotal > 999 ? 0 : 99;
     const tax = Math.round(subtotal * 0.18);
     const discount = coupon ? Math.round(subtotal * (coupon.discount || 0)) : 0;
-    const total = subtotal + shippingCost + tax - discount;
+
+    // Apply Snapples (loyalty) points as discount: 1 point = ₹1
+    let pointsApplied = 0;
+    let pointsDiscount = 0;
+    if (redeemPoints && redeemPoints > 0) {
+      const dbUser = await User.findById(req.user._id).select('loyaltyPoints');
+      const usable = Math.min(redeemPoints, dbUser?.loyaltyPoints || 0);
+      pointsApplied = usable;
+      pointsDiscount = usable; // 1:1 INR value
+      // Deduct immediately to avoid double-spend
+      if (usable > 0) {
+        await User.findByIdAndUpdate(req.user._id, { $inc: { loyaltyPoints: -usable } });
+      }
+    }
+
+    const total = Math.max(0, subtotal + shippingCost + tax - discount - pointsDiscount);
 
     // Create order
     const order = new Order({
@@ -126,6 +142,7 @@ router.post('/', auth, [
       shippingCost,
       tax,
       discount,
+      points: { applied: pointsApplied, discount: pointsDiscount },
       coupon,
       total,
       status: 'pending'

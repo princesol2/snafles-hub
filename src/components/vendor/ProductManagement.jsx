@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { productsAPI, vendorAnalyticsAPI } from '../../services/api';
 import { 
   Plus, 
   Edit, 
@@ -14,44 +15,7 @@ import {
 } from 'lucide-react';
 
 const ProductManagement = () => {
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: 'Handcrafted Silver Necklace',
-      price: 2999,
-      stock: 15,
-      category: 'Jewelry',
-      status: 'active',
-      image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=200&h=200&fit=crop',
-      description: 'Beautiful handcrafted silver necklace with intricate design patterns.',
-      featured: true,
-      createdAt: '2024-01-15'
-    },
-    {
-      id: 2,
-      name: 'Ceramic Vase Set',
-      price: 2499,
-      stock: 8,
-      category: 'Decor',
-      status: 'active',
-      image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop',
-      description: 'Set of 3 beautiful ceramic vases in different sizes.',
-      featured: false,
-      createdAt: '2024-01-14'
-    },
-    {
-      id: 3,
-      name: 'Wooden Wall Art',
-      price: 4599,
-      stock: 2,
-      category: 'Art',
-      status: 'low_stock',
-      image: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=200&h=200&fit=crop',
-      description: 'Intricately carved wooden wall art featuring nature motifs.',
-      featured: true,
-      createdAt: '2024-01-13'
-    }
-  ]);
+  const [products, setProducts] = useState([]);
 
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -85,28 +49,53 @@ const ProductManagement = () => {
     setShowModal(true);
   };
 
-  const handleDelete = (productId) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
+  const handleDelete = async (productId) => {
+    if (!window.confirm('Are you sure you want to delete this product?')) return;
+    try {
+      await productsAPI.deleteProduct(productId);
       setProducts(products.filter(p => p.id !== productId));
+      toast.success('Product deleted');
+    } catch (e) {
+      toast.error(e.message || 'Delete failed');
     }
   };
 
-  const handleSave = (productData) => {
-    if (editingProduct) {
-      setProducts(products.map(p => 
-        p.id === editingProduct.id ? { ...p, ...productData } : p
-      ));
-    } else {
-      const newProduct = {
-        ...productData,
-        id: Date.now(),
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      setProducts([...products, newProduct]);
+  const handleSave = async (productData) => {
+    try {
+      if (editingProduct) {
+        const updated = await productsAPI.updateProduct(editingProduct.id, {
+          ...productData,
+          images: [productData.image || '/placeholder-product.jpg']
+        });
+        toast.success('Product updated');
+      } else {
+        const created = await productsAPI.createProduct({
+          ...productData,
+          images: [productData.image || '/placeholder-product.jpg']
+        });
+        toast.success('Product created (awaiting approval)');
+      }
+      setShowModal(false);
+      setEditingProduct(null);
+      // Reload list
+      const res = await vendorAnalyticsAPI.getProducts();
+      const list = res.products || [];
+      setProducts(list.map(p => ({
+        id: p._id || p.id,
+        name: p.name,
+        price: p.price,
+        stock: p.stock,
+        category: p.category,
+        status: p.isActive ? 'active' : 'inactive',
+        image: Array.isArray(p.images) ? p.images[0] : p.image,
+        description: p.description,
+        featured: Boolean(p.featured),
+        createdAt: p.createdAt?.slice(0,10)
+      }))
+      );
+    } catch (e) {
+      toast.error(e.message || 'Save failed');
     }
-    setShowModal(false);
-    setEditingProduct(null);
-    toast.success('Product saved successfully');
   };
 
   const ProductModal = () => (
@@ -522,3 +511,28 @@ const ProductManagement = () => {
 };
 
 export default ProductManagement;
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await vendorAnalyticsAPI.getProducts();
+        const list = res.products || [];
+        setProducts(list.map(p => ({
+          id: p._id || p.id,
+          name: p.name,
+          price: p.price,
+          stock: p.stock,
+          category: p.category,
+          status: p.isActive ? 'active' : 'inactive',
+          image: Array.isArray(p.images) ? p.images[0] : p.image,
+          description: p.description,
+          featured: Boolean(p.featured),
+          createdAt: p.createdAt?.slice(0,10)
+        }))
+        );
+      } catch (e) {
+        console.error('Failed to load products', e);
+        toast.error('Failed to load products');
+      }
+    };
+    load();
+  }, []);

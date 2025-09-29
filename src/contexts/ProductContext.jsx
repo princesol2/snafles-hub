@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { productsAPI, vendorsAPI } from '../services/api'
-import { demoProducts, demoVendors } from '../data/demoData'
 
 const ProductContext = createContext()
 
@@ -58,14 +57,6 @@ export const ProductProvider = ({ children }) => {
 
       console.log('Raw products loaded:', rawProducts.length, 'Featured:', rawProducts.filter(p => p.featured).length)
 
-      // Fallback to demo data in dev if API returns empty
-      const allowDemo = (import.meta.env.VITE_ALLOW_DEMO_DATA === 'true') || import.meta.env.DEV
-      if (allowDemo && rawProducts.length === 0) {
-        console.warn('API returned no products. Falling back to demo data.')
-        rawProducts = demoProducts
-        rawVendors = demoVendors
-      }
-
       const normalizedVendors = rawVendors.map(normalizeVendor)
       const normalizedProducts = rawProducts.map(normalizeProduct)
       
@@ -77,17 +68,9 @@ export const ProductProvider = ({ children }) => {
       console.log('Data loaded successfully from API!')
     } catch (err) {
       console.error('Error loading data from API:', err)
-      const allowDemo = (import.meta.env.VITE_ALLOW_DEMO_DATA === 'true') || import.meta.env.DEV
-      if (allowDemo) {
-        console.warn('Falling back to demo data after API error.')
-        setProducts(demoProducts)
-        setVendors(demoVendors)
-        setError(null)
-      } else {
-        setError('Failed to load data: ' + err.message)
-        setProducts([])
-        setVendors([])
-      }
+      setError('Failed to load data: ' + err.message)
+      setProducts([])
+      setVendors([])
     } finally {
       setLoading(false)
     }
