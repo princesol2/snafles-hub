@@ -517,25 +517,6 @@ const ProductDetail = () => {
                   <Heart size={20} />
                 </button>
               </div>
-              
-              {/* Negotiation and advanced features removed for minimal core */}
-                <button
-                  onClick={() => setShowTryOn(true)}
-                  className="btn btn-ghost flex items-center justify-center space-x-2 hover-lift border-2 border-blue-200 hover:border-blue-300 hover:bg-blue-50"
-                >
-                  <Camera size={18} />
-                  <span>Virtual Try-On</span>
-                </button>
-
-                <button
-                  onClick={() => setShowHelperPoints(true)}
-                  className="btn btn-outline flex items-center justify-center space-x-2 hover-lift"
-                >
-                  <Star size={18} />
-                  <span>Helper Points</span>
-                </button>
-              </div>
-              
             </div>
 
             {/* Vendor Info */}
@@ -724,7 +705,6 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
-      
       
       {/* Feature Modals */}
       {/* Advanced modals removed */}
