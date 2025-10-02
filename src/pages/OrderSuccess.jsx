@@ -151,7 +151,7 @@ const OrderSuccess = () => {
             {currentOrder.items?.map((item, index) => (
               <div key={index} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
                 <img
-                  src={item.image}
+                  src={item.image || item.images?.[0] || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop'}
                   alt={item.name}
                   className="w-16 h-16 object-cover rounded-lg"
                 />
@@ -181,7 +181,7 @@ const OrderSuccess = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Shipping:</span>
-                <span>₹{currentOrder.shipping}</span>
+                <span>₹{currentOrder.shippingCost ?? currentOrder.shipping ?? 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tax (GST):</span>

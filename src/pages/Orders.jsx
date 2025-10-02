@@ -259,9 +259,12 @@ const Orders = () => {
                 </div>
                 
                 <div className="flex space-x-2">
-                  <button className="btn btn-outline text-sm">
+                  <Link
+                    to={`/track-order/${order.orderNumber || order.id}`}
+                    className="btn btn-outline text-sm"
+                  >
                     Track Order
-                  </button>
+                  </Link>
                   <button className="btn btn-outline text-sm">
                     Reorder
                   </button>
