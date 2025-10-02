@@ -253,9 +253,9 @@ const Orders = () => {
               {/* Order Actions */}
               <div className="border-t pt-4 mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
                 <div className="text-sm text-gray-500">
-                  {order.status === 'Processing' && 'We are preparing your order'}
-                  {order.status === 'Shipped' && `Estimated delivery: ${new Date(order.estimatedDelivery).toLocaleDateString()}`}
-                  {order.status === 'Delivered' && 'Order delivered successfully'}
+                  {order.status === 'processing' && 'We are preparing your order'}
+                  {order.status === 'shipped' && `Estimated delivery: ${new Date(order.tracking?.estimatedDelivery || order.estimatedDelivery || Date.now()).toLocaleDateString()}`}
+                  {order.status === 'delivered' && 'Order delivered successfully'}
                 </div>
                 
                 <div className="flex space-x-2">
