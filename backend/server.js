@@ -21,13 +21,37 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet());
 app.use(compression());
 
+// Trust proxy (for correct IP when behind proxies / dev proxy)
+app.set('trust proxy', 1);
+
 // Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
-});
-app.use(limiter);
+const isProd = process.env.NODE_ENV === 'production';
+if (isProd) {
+  const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS || String(15 * 60 * 1000), 10);
+  const maxReq = parseInt(process.env.RATE_LIMIT_MAX || '300', 10);
+  const baseLimiter = rateLimit({
+    windowMs,
+    max: maxReq,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many requests from this IP, please try again later.' },
+    skip: (req) => req.method === 'OPTIONS' || req.path === '/api/health'
+  });
+  // Apply general limiter to most APIs
+  app.use(baseLimiter);
+
+  // Tighter limiter for auth endpoints (optional override via env)
+  const authLimiter = rateLimit({
+    windowMs,
+    max: parseInt(process.env.RATE_LIMIT_AUTH_MAX || '100', 10),
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many auth attempts. Please try again later.' },
+  });
+  app.use('/api/auth', authLimiter);
+} else {
+  console.log('🔓 Rate limiter disabled in development');
+}
 
 // CORS configuration - allow common local dev origins
 const allowedOrigins = [
@@ -66,9 +90,12 @@ app.use('/api/cart', require('./routes/cart'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/rewards', require('./routes/rewards'));
 app.use('/api/repayment', require('./routes/repayment'));
+app.use('/api/helper-points', require('./routes/helperPoints'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/vendor/analytics', require('./routes/vendorAnalytics'));
 app.use('/api/shipping', require('./routes/shipping'));
+// Web auth redirect examples (form-POST friendly)
+app.use('/', require('./routes/authRedirect'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

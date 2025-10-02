@@ -14,13 +14,26 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet());
 app.use(compression());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
-});
-app.use(limiter);
+// Trust proxy for accurate IP detection
+app.set('trust proxy', 1);
+
+// Rate limiting (disabled in development)
+const isProd = process.env.NODE_ENV === 'production';
+if (isProd) {
+  const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS || String(15 * 60 * 1000), 10);
+  const maxReq = parseInt(process.env.RATE_LIMIT_MAX || '300', 10);
+  const limiter = rateLimit({
+    windowMs,
+    max: maxReq,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many requests from this IP, please try again later.' },
+    skip: (req) => req.method === 'OPTIONS' || req.path === '/api/health'
+  });
+  app.use(limiter);
+} else {
+  console.log('🔓 Rate limiter disabled in mock dev server');
+}
 
 // CORS configuration
 app.use(cors({
