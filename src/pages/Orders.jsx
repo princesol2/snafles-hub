@@ -104,7 +104,7 @@ const Orders = () => {
 
         <div className="space-y-6">
           {orders.map((order) => (
-            <div key={order.id} className="bg-white rounded-xl shadow-sm p-6">
+            <div key={order.id || order._id || order.orderNumber} className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
                 <div className="flex items-center space-x-4 mb-4 lg:mb-0">
                   <div className="flex items-center space-x-2">
@@ -130,7 +130,7 @@ const Orders = () => {
                   </div>
                   <div className="flex space-x-2">
                     <Link
-                      to={`/track-order/${order.id}`}
+                      to={`/track-order/${order.orderNumber || order.id}`}
                       className="btn btn-outline text-sm"
                     >
                       <Truck size={16} className="mr-2" />

@@ -1,10 +1,20 @@
 import { ordersAPI, paymentsAPI } from './api';
 
 class OrderService {
+  // Normalize an order object to ensure consistent shape across API responses
+  normalizeOrder(order) {
+    if (!order) return order;
+    // Prefer existing id, else map from _id
+    const id = order.id || order._id;
+    return { ...order, id };
+  }
   // Create a new order
   async createOrder(orderData) {
     try {
       const response = await ordersAPI.createOrder(orderData);
+      if (response && response.order) {
+        response.order = this.normalizeOrder(response.order);
+      }
       return response;
     } catch (error) {
       console.error('Error creating order:', error);
@@ -29,9 +39,10 @@ class OrderService {
   }
 
   // Confirm payment
-  async confirmPayment(paymentIntentId) {
+  async confirmPayment(payload) {
     try {
-      const response = await paymentsAPI.confirmPayment(paymentIntentId);
+      const data = typeof payload === 'string' ? { paymentIntentId: payload } : payload;
+      const response = await paymentsAPI.confirmPayment(data);
       return response;
     } catch (error) {
       console.error('Error confirming payment:', error);
@@ -43,7 +54,8 @@ class OrderService {
   async getOrder(orderId) {
     try {
       const response = await ordersAPI.getOrder(orderId);
-      return response;
+      const order = response?.order || response;
+      return { order: this.normalizeOrder(order) };
     } catch (error) {
       console.error('Error fetching order:', error);
       throw error;
@@ -54,7 +66,8 @@ class OrderService {
   async getUserOrders(params = {}) {
     try {
       const response = await ordersAPI.getUserOrders(params);
-      return response;
+      const orders = (response?.orders || response || []).map((o) => this.normalizeOrder(o));
+      return { ...(typeof response === 'object' ? response : {}), orders };
     } catch (error) {
       console.error('Error fetching user orders:', error);
       throw error;
@@ -65,6 +78,9 @@ class OrderService {
   async updateOrderStatus(orderId, status) {
     try {
       const response = await ordersAPI.updateOrderStatus(orderId, status);
+      if (response && response.order) {
+        response.order = this.normalizeOrder(response.order);
+      }
       return response;
     } catch (error) {
       console.error('Error updating order status:', error);
@@ -76,6 +92,9 @@ class OrderService {
   async cancelOrder(orderId, reason) {
     try {
       const response = await ordersAPI.cancelOrder(orderId, reason);
+      if (response && response.order) {
+        response.order = this.normalizeOrder(response.order);
+      }
       return response;
     } catch (error) {
       console.error('Error cancelling order:', error);
