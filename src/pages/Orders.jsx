@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Package, Truck, CheckCircle, Clock, Eye, RefreshCw } from 'lucide-react'
+import { Package, Truck, CheckCircle, Clock, Eye, RefreshCw, Search } from 'lucide-react'
 import { useOrders } from '../contexts/OrderContext'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -8,6 +8,9 @@ import toast from 'react-hot-toast'
 const Orders = () => {
   const { orders, loading, loadOrders, cancelOrder } = useOrders()
   const [cancellingOrder, setCancellingOrder] = useState(null)
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [query, setQuery] = useState('')
+  const [sortBy, setSortBy] = useState('newest') // newest, oldest, amount-high, amount-low
 
   useEffect(() => {
     loadOrders()
@@ -67,6 +70,31 @@ const Orders = () => {
     }
   }
 
+  const placeholderImage = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop'
+
+  const filteredOrders = useMemo(() => {
+    let list = Array.isArray(orders) ? [...orders] : []
+    if (statusFilter !== 'all') list = list.filter(o => o.status === statusFilter)
+    if (query.trim()) {
+      const q = query.trim().toLowerCase()
+      list = list.filter(o =>
+        String(o.orderNumber || '').toLowerCase().includes(q) ||
+        String(o.id || o._id || '').toLowerCase().includes(q)
+      )
+    }
+    switch (sortBy) {
+      case 'oldest':
+        list.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt)); break
+      case 'amount-high':
+        list.sort((a,b) => (b.total || 0) - (a.total || 0)); break
+      case 'amount-low':
+        list.sort((a,b) => (a.total || 0) - (b.total || 0)); break
+      default:
+        list.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))
+    }
+    return list
+  }, [orders, statusFilter, query, sortBy])
+
   if (loading) {
     return (
       <div className="container py-16">
@@ -102,8 +130,45 @@ const Orders = () => {
           <p className="text-gray-600">Track and manage your orders</p>
         </div>
 
+        {/* Controls */}
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-6 flex flex-col md:flex-row md:items-center gap-4">
+          <div className="relative w-full md:max-w-sm">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by order number or ID"
+              className="w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {['all','pending','confirmed','processing','shipped','delivered','cancelled'].map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`px-3 py-1 rounded-full text-sm border ${statusFilter===s ? 'bg-primary text-white border-primary' : 'text-gray-600 hover:bg-gray-100 border-gray-200'}`}
+              >
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </button>
+            ))}
+          </div>
+          <div className="md:ml-auto">
+            <select
+              value={sortBy}
+              onChange={(e)=>setSortBy(e.target.value)}
+              className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="amount-high">Amount: High to Low</option>
+              <option value="amount-low">Amount: Low to High</option>
+            </select>
+          </div>
+        </div>
+
         <div className="space-y-6">
-          {orders.map((order) => (
+          {filteredOrders.map((order) => (
             <div key={order.id || order._id || order.orderNumber} className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
                 <div className="flex items-center space-x-4 mb-4 lg:mb-0">
@@ -166,7 +231,7 @@ const Orders = () => {
                   {order.items.slice(0, 3).map((item) => (
                     <div key={item.id} className="flex items-center space-x-3">
                       <img
-                        src={item.image}
+                        src={item.image || item.images?.[0] || placeholderImage}
                         alt={item.name}
                         className="w-16 h-16 object-cover rounded-lg"
                       />
@@ -204,6 +269,9 @@ const Orders = () => {
               </div>
             </div>
           ))}
+          {filteredOrders.length === 0 && (
+            <div className="text-center text-gray-600 py-12">No orders match your filters.</div>
+          )}
         </div>
       </div>
     </div>
