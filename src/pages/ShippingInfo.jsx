@@ -63,6 +63,13 @@ const ShippingInfo = () => {
             Back
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">Shipping Information</h1>
+          <img
+            src="/submarine.svg"
+            alt="Submarine logo"
+            title="Submarine"
+            className="ml-auto h-10 w-10 opacity-90"
+            loading="lazy"
+          />
         </div>
 
         {/* Shipping Options */}
