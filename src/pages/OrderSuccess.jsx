@@ -9,21 +9,27 @@ import toast from 'react-hot-toast';
 const OrderSuccess = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const { getOrder, currentOrder } = useOrders();
+  const { getOrder, trackOrder, currentOrder } = useOrders();
   const { clearCart } = useCart();
   const [loading, setLoading] = useState(true);
+  const [publicOrder, setPublicOrder] = useState(null);
 
   useEffect(() => {
     const loadOrder = async () => {
-      if (orderId) {
-        try {
+      if (!orderId) { setLoading(false); return; }
+      try {
+        const isObjectId = /^[a-fA-F0-9]{24}$/.test(orderId);
+        if (isObjectId) {
           await getOrder(orderId);
-        } catch (error) {
-          toast.error('Failed to load order details');
-          navigate('/orders');
+        } else {
+          const tr = await trackOrder(orderId);
+          if (tr && tr.order) setPublicOrder(tr.order);
         }
+      } catch (error) {
+        toast.error('Failed to load order details');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     loadOrder();
@@ -40,7 +46,9 @@ const OrderSuccess = () => {
     );
   }
 
-  if (!currentOrder) {
+  const order = currentOrder || publicOrder;
+
+  if (!order) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -92,10 +100,10 @@ const OrderSuccess = () => {
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900">Order Details</h2>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(currentOrder.status)}`}>
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
               <span className="flex items-center space-x-1">
-                {getStatusIcon(currentOrder.status)}
-                <span className="capitalize">{currentOrder.status}</span>
+                {getStatusIcon(order.status)}
+                <span className="capitalize">{order.status}</span>
               </span>
             </span>
           </div>
@@ -107,21 +115,25 @@ const OrderSuccess = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Order Number:</span>
-                  <span className="font-medium">{currentOrder.orderNumber}</span>
+                  <span className="font-medium">{order.orderNumber}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Order Date:</span>
                   <span className="font-medium">
-                    {new Date(currentOrder.createdAt).toLocaleDateString()}
+                    {new Date(order.createdAt).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Amount:</span>
-                  <span className="font-medium text-lg">₹{currentOrder.total}</span>
+                  {order.total !== undefined ? (
+                    <span className="font-medium text-lg">₹{order.total}</span>
+                  ) : (
+                    <span className="font-medium text-lg">—</span>
+                  )}
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Payment Method:</span>
-                  <span className="font-medium capitalize">{currentOrder.payment?.method}</span>
+                  <span className="font-medium capitalize">{order.payment?.method || '—'}</span>
                 </div>
               </div>
             </div>
@@ -133,12 +145,12 @@ const OrderSuccess = () => {
                 Shipping Address
               </h3>
               <div className="text-sm text-gray-600">
-                <p className="font-medium">{currentOrder.shipping?.firstName} {currentOrder.shipping?.lastName}</p>
-                <p>{currentOrder.shipping?.address}</p>
-                <p>{currentOrder.shipping?.city}, {currentOrder.shipping?.state} {currentOrder.shipping?.zipCode}</p>
-                <p>{currentOrder.shipping?.country}</p>
-                <p className="mt-2">📞 {currentOrder.shipping?.phone}</p>
-                <p>📧 {currentOrder.shipping?.email}</p>
+                <p className="font-medium">{order.shipping?.firstName} {order.shipping?.lastName}</p>
+                <p>{order.shipping?.address}</p>
+                <p>{order.shipping?.city}, {order.shipping?.state} {order.shipping?.zipCode}</p>
+                <p>{order.shipping?.country}</p>
+                <p className="mt-2">📞 {order.shipping?.phone}</p>
+                <p>📧 {order.shipping?.email}</p>
               </div>
             </div>
           </div>
@@ -148,7 +160,7 @@ const OrderSuccess = () => {
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
           <h3 className="text-xl font-semibold text-gray-900 mb-6">Order Items</h3>
           <div className="space-y-4">
-            {currentOrder.items?.map((item, index) => (
+            {order.items?.map((item, index) => (
               <div key={index} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
                 <img
                   src={item.image || item.images?.[0] || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop'}
@@ -173,26 +185,34 @@ const OrderSuccess = () => {
           </div>
 
           {/* Order Summary */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Subtotal:</span>
-                <span>₹{currentOrder.subtotal}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Shipping:</span>
-                <span>₹{currentOrder.shippingCost ?? currentOrder.shipping ?? 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tax (GST):</span>
-                <span>₹{currentOrder.tax}</span>
-              </div>
-              <div className="flex justify-between text-lg font-semibold">
-                <span>Total:</span>
-                <span>₹{currentOrder.total}</span>
+          {(order.total !== undefined || order.subtotal !== undefined) && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="space-y-2 text-sm">
+                {order.subtotal !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span>₹{order.subtotal}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Shipping:</span>
+                  <span>₹{order.shippingCost ?? 0}</span>
+                </div>
+                {order.tax !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Tax (GST):</span>
+                    <span>₹{order.tax}</span>
+                  </div>
+                )}
+                {order.total !== undefined && (
+                  <div className="flex justify-between text-lg font-semibold">
+                    <span>Total:</span>
+                    <span>₹{order.total}</span>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Action Buttons */}
