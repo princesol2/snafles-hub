@@ -24,12 +24,18 @@ const OrderTracking = () => {
   const loadOrderAndTracking = async () => {
     setLoading(true);
     try {
-      // Load order details
-      await getOrder(orderId);
-      
-      // Load tracking information
-      const tracking = await trackOrder(orderId);
-      setTrackingData(tracking);
+      const isObjectId = /^[a-fA-F0-9]{24}$/.test(orderId);
+      if (isObjectId) {
+        const res = await getOrder(orderId);
+        const ordNum = res?.order?.orderNumber;
+        if (ordNum) {
+          const tracking = await trackOrder(ordNum);
+          setTrackingData(tracking);
+        }
+      } else {
+        const tracking = await trackOrder(orderId);
+        setTrackingData(tracking);
+      }
     } catch (error) {
       toast.error('Failed to load order tracking information');
       console.error('Error loading tracking:', error);
@@ -81,7 +87,7 @@ const OrderTracking = () => {
       { id: 'delivered', label: 'Delivered', description: 'Your order has been delivered successfully' }
     ];
 
-    const currentStatus = currentOrder?.status || 'confirmed';
+    const currentStatus = (currentOrder?.status || trackingData?.order?.status) || 'confirmed';
     const currentIndex = steps.findIndex(step => step.id === currentStatus);
 
     return steps.map((step, index) => ({
@@ -120,7 +126,7 @@ const OrderTracking = () => {
                     id="orderId"
                     value={searchOrderId}
                     onChange={(e) => setSearchOrderId(e.target.value)}
-                    placeholder="Enter your order number (e.g., SNF-ABC123)"
+                    placeholder="Enter your order number (e.g., ORD-1696240000-ABCDE)"
                     className="input pl-10"
                     required
                   />
@@ -138,7 +144,9 @@ const OrderTracking = () => {
     );
   }
 
-  if (!currentOrder) {
+  const order = currentOrder || trackingData?.order;
+
+  if (!order) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -171,15 +179,15 @@ const OrderTracking = () => {
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Order #{currentOrder.orderNumber}</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Order #{order.orderNumber}</h2>
               <p className="text-gray-600">
-                Placed on {new Date(currentOrder.createdAt).toLocaleDateString()}
+                Placed on {new Date(order.createdAt).toLocaleDateString()}
               </p>
             </div>
-            <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(currentOrder.status)}`}>
+            <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
               <span className="flex items-center space-x-2">
-                {getStatusIcon(currentOrder.status)}
-                <span className="capitalize">{currentOrder.status.replace('_', ' ')}</span>
+                {getStatusIcon(order.status)}
+                <span className="capitalize">{order.status.replace('_', ' ')}</span>
               </span>
             </span>
           </div>
@@ -190,7 +198,7 @@ const OrderTracking = () => {
                 <Package className="w-6 h-6 text-blue-600" />
               </div>
               <h3 className="font-medium text-gray-900">Total Items</h3>
-              <p className="text-2xl font-bold text-blue-600">{currentOrder.items?.length || 0}</p>
+              <p className="text-2xl font-bold text-blue-600">{order.items?.length || 0}</p>
             </div>
             
             <div className="text-center">
@@ -199,7 +207,7 @@ const OrderTracking = () => {
               </div>
               <h3 className="font-medium text-gray-900">Delivery Address</h3>
               <p className="text-sm text-gray-600">
-                {currentOrder.shipping?.city}, {currentOrder.shipping?.state}
+                {order.shipping?.city}, {order.shipping?.state}
               </p>
             </div>
             
