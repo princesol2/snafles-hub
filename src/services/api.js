@@ -138,14 +138,6 @@ export const authAPI = {
     });
   },
 
-  // Request password reset
-  requestPasswordReset: async (resetData) => {
-    return apiRequest('/auth/request-password-reset', {
-      method: 'POST',
-      body: JSON.stringify(resetData),
-    });
-  },
-
   // Forgot password (request reset link)
   forgotPassword: async (email) => {
     return apiRequest('/auth/forgot-password', {
@@ -183,6 +175,28 @@ export const authAPI = {
       method: 'POST',
       body: JSON.stringify(googleData),
     });
+  },
+};
+
+// Addresses API
+export const addressesAPI = {
+  getAddresses: async () => {
+    return apiRequest('/users/addresses');
+  },
+  addAddress: async (address) => {
+    return apiRequest('/users/addresses', {
+      method: 'POST',
+      body: JSON.stringify(address),
+    });
+  },
+  updateAddress: async (id, address) => {
+    return apiRequest(`/users/addresses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(address),
+    });
+  },
+  deleteAddress: async (id) => {
+    return apiRequest(`/users/addresses/${id}`, { method: 'DELETE' });
   },
 };
 
@@ -325,6 +339,13 @@ export const paymentsAPI = {
       body: JSON.stringify(paymentData),
     });
   },
+  // Wallet top-up with auto-reimburse
+  walletTopup: async (amount) => {
+    return apiRequest('/payments/wallet-topup', {
+      method: 'POST',
+      body: JSON.stringify({ amount })
+    });
+  }
 };
 
 // Upload API
@@ -413,6 +434,22 @@ export const rewardsAPI = {
   redeem: async (rewardId) => {
     return apiRequest(`/rewards/redeem/${rewardId}`, { method: 'POST' });
   },
+};
+
+// Helper Points API
+export const helperPointsAPI = {
+  getSummary: async () => {
+    return apiRequest('/helper-points/summary');
+  },
+  getTransactions: async (limit = 50) => {
+    return apiRequest(`/helper-points/transactions?limit=${limit}`);
+  },
+  topup: async (amount) => {
+    return apiRequest('/helper-points/topup', {
+      method: 'POST',
+      body: JSON.stringify({ amount })
+    });
+  }
 };
 
 // Repayment API

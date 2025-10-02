@@ -19,8 +19,8 @@ const ForgotPassword = () => {
         return;
       }
 
-      // Use unified reset request API used elsewhere in the app
-      const res = await authAPI.requestPasswordReset({ email: emailTrimmed });
+      // Call backend's forgot-password endpoint
+      const res = await authAPI.forgotPassword(emailTrimmed);
       toast.success('If the email exists, a reset link has been sent.');
       if (res?.resetUrl) setDevResetUrl(res.resetUrl);
     } catch (err) {

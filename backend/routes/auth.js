@@ -228,6 +228,28 @@ router.post('/change-password', auth, [
   }
 });
 
+// @route   POST /api/auth/verify-password
+// @desc    Verify current password matches
+// @access  Private
+router.post('/verify-password', auth, [
+  body('password').exists().withMessage('Password is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const { password } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const isValid = await user.comparePassword(password);
+    return res.json({ isValid });
+  } catch (error) {
+    console.error('Verify password error:', error);
+    res.status(500).json({ message: 'Server error verifying password' });
+  }
+});
+
 // Forgot/Reset Password Routes
 // @route   POST /api/auth/forgot-password
 // @desc    Request password reset (email)
@@ -257,7 +279,7 @@ router.post('/forgot-password', [
     user.passwordResetExpires = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
     await user.save();
 
-    const resetUrl = `${process.env.FRONTEND_URL || 'https://localhost:5173'}/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
 
     // In a real app, send email here. For development, return a hint.
     const payload = { message: 'Password reset link generated.' };
@@ -428,6 +450,52 @@ router.post('/resend-verification', auth, async (req, res) => {
   } catch (error) {
     console.error('Resend verification error:', error);
     res.status(500).json({ message: 'Server error during resend verification' });
+  }
+});
+
+// @route   POST /api/auth/google
+// @desc    Google OAuth login (dev-friendly mock)
+// @access  Public
+router.post('/google', async (req, res) => {
+  try {
+    const { googleToken, email, name, picture } = req.body || {};
+    // In a real implementation, verify googleToken via Google APIs
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    let user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      user = new User({
+        name: name || 'Google User',
+        email: email.toLowerCase(),
+        password: Math.random().toString(36).slice(2) + Date.now(), // random placeholder
+        role: 'customer',
+        emailVerified: true,
+        lastLogin: new Date(),
+      });
+      await user.save();
+    } else {
+      user.lastLogin = new Date();
+      await user.save();
+    }
+
+    const token = generateToken(user._id);
+    res.json({
+      success: true,
+      message: 'Google authentication successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        provider: 'google'
+      }
+    });
+  } catch (error) {
+    console.error('Google auth error:', error);
+    res.status(500).json({ success: false, message: 'Google authentication failed' });
   }
 });
 

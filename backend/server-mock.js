@@ -98,6 +98,26 @@ const mockUsers = [
     isVerified: true,
     lastLogin: new Date()
   },
+  // Demo vendor to match frontend demo credentials
+  {
+    id: 'vendor-002',
+    name: 'Creative Home Studio',
+    email: 'vendor@snafles.com',
+    password: 'vendor123',
+    phone: '+91 98765 43211',
+    address: {
+      street: '456 Studio Avenue',
+      city: 'Delhi',
+      state: 'Delhi',
+      zipCode: '110001',
+      country: 'India'
+    },
+    role: 'vendor',
+    businessName: 'Creative Home Studio',
+    businessType: 'Home & Decor',
+    isVerified: true,
+    lastLogin: new Date()
+  },
   {
     id: 'admin-001',
     name: 'Admin User',
@@ -821,6 +841,12 @@ const mockVendors = [
   }
 ];
 
+// Capture default snapshots for seeding demo data on restart
+const __deepClone = (obj) => JSON.parse(JSON.stringify(obj));
+const DEFAULT_USERS = __deepClone(mockUsers);
+const DEFAULT_PRODUCTS = __deepClone(mockProducts);
+const DEFAULT_VENDORS = __deepClone(mockVendors);
+
 // JWT Secret (in production, use a secure secret)
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_here';
 
@@ -1207,7 +1233,8 @@ app.post('/api/auth/forgot-password', (req, res) => {
     // In a real app, send email here. For development, return success
     res.json({ 
       message: 'Password reset link has been sent to your email.',
-      resetUrl: `https://localhost:5174/reset-password/demo-token-${Date.now()}`
+      // Point to the local frontend for convenience
+      resetUrl: `http://localhost:5173/reset-password/demo-token-${Date.now()}`
     });
   } catch (error) {
     console.error('Forgot password error:', error);
@@ -1386,9 +1413,102 @@ app.get('/api/payments/methods', (req, res) => {
   }
 });
 
+// Second-hand marketplace routes
+// Minimal mock dataset and endpoints to support frontend SecondHand page
+const mockSecondhand = [
+  {
+    id: 'sh-001',
+    name: 'Preloved Ceramic Planter',
+    description: 'Gently used planter, perfect for succulents',
+    price: 799,
+    images: [
+      'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=400&h=400&fit=crop'
+    ],
+    category: 'Home',
+    vendor: 'vendor-002',
+    condition: 'good',
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    id: 'sh-002',
+    name: 'Vintage Wall Art',
+    description: 'Retro print in frame, minor wear',
+    price: 1499,
+    images: [
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=400&h=400&fit=crop'
+    ],
+    category: 'Art',
+    vendor: 'vendor-003',
+    condition: 'excellent',
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    id: 'sh-003',
+    name: 'Handmade Tote (Preloved)',
+    description: 'Lightly used, no stains, sturdy handles',
+    price: 999,
+    images: [
+      'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=400&h=400&fit=crop'
+    ],
+    category: 'Accessories',
+    vendor: 'vendor-001',
+    condition: 'good',
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
+];
+
+app.get('/api/secondhand', (req, res) => {
+  try {
+    const { category } = req.query || {};
+    let items = mockSecondhand.filter((p) => p.isActive !== false);
+    if (category && String(category).toLowerCase() !== 'all') {
+      items = items.filter(
+        (p) => (p.category || '').toLowerCase() === String(category).toLowerCase()
+      );
+    }
+    res.json({ products: items });
+  } catch (error) {
+    console.error('Get secondhand products error:', error);
+    res.status(500).json({ message: 'Server error while fetching second-hand products' });
+  }
+});
+
+app.get('/api/secondhand/:id', (req, res) => {
+  try {
+    const item = mockSecondhand.find((p) => String(p.id) === String(req.params.id));
+    if (!item) {
+      return res.status(404).json({ message: 'Second-hand product not found' });
+    }
+    res.json(item);
+  } catch (error) {
+    console.error('Get secondhand product error:', error);
+    res.status(500).json({ message: 'Server error while fetching the product' });
+  }
+});
+
 // Orders routes
 app.get('/api/orders', auth, (req, res) => {
   try {
+    const fallbackProduct = {
+      id: 'sample-001',
+      name: 'Sample Product',
+      price: 0,
+      images: [],
+      vendor: 'vendor-001'
+    };
+
+    const baseProduct = (Array.isArray(mockProducts) && mockProducts.length > 0)
+      ? mockProducts[0]
+      : fallbackProduct;
+
+    const safePrice = Number(baseProduct?.price) || 0;
+
     const mockOrders = [
       {
         id: 'order-001',
@@ -1396,12 +1516,12 @@ app.get('/api/orders', auth, (req, res) => {
         user: req.user.id,
         items: [
           {
-            product: mockProducts[0],
+            product: baseProduct,
             quantity: 1,
-            price: mockProducts[0].price
+            price: safePrice
           }
         ],
-        total: mockProducts[0].price,
+        total: safePrice,
         status: 'confirmed',
         payment: {
           status: 'completed',
@@ -2596,6 +2716,28 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
+// Reset mock data on server start
+function resetMockData() {
+  try {
+    const EMPTY_ON_START = process.env.EMPTY_MOCK_DATA_ON_START === 'true' || process.env.RESET_MOCK_DATA === 'true';
+    const SEED_DEFAULTS = (process.env.SEED_MOCK_DATA || 'true').toLowerCase() !== 'false';
+
+    if (Array.isArray(mockUsers)) mockUsers.length = 0;
+    if (Array.isArray(mockProducts)) mockProducts.length = 0;
+    if (Array.isArray(mockVendors)) mockVendors.length = 0;
+
+    if (!EMPTY_ON_START && SEED_DEFAULTS) {
+      // Re-seed demo data so demo users work after server restart
+      mockUsers.push(...__deepClone(DEFAULT_USERS));
+      mockProducts.push(...__deepClone(DEFAULT_PRODUCTS));
+      mockVendors.push(...__deepClone(DEFAULT_VENDORS));
+    }
+  } catch (e) {
+    console.error('Failed to reset mock data:', e);
+  }
+}
+resetMockData();
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Mock API Server running on port ${PORT}`);
@@ -2605,4 +2747,3 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
-
