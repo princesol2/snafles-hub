@@ -127,4 +127,21 @@ export const demoProducts = [
     reviews: 8,
     featured: false,
   },
+  {
+    id: 'p7',
+    name: 'Snafles Demo Mug',
+    description: 'Matte ceramic mug with SNAFLEShub branding.',
+    detailedDescription: 'A premium matte-finish ceramic mug featuring the SNAFLEShub logo. Perfect for your workspace and daily coffee.',
+    price: 699,
+    originalPrice: 899,
+    images: [
+      'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&h=600&fit=crop'
+    ],
+    category: 'Decor',
+    vendor: { id: 'v3', name: 'Creative Home Studio', logo: demoVendors[2].logo },
+    stock: 50,
+    rating: 4.9,
+    reviews: 5,
+    featured: true,
+  },
 ]

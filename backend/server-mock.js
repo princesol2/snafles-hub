@@ -673,6 +673,35 @@ const mockProducts = [
     createdAt: new Date(),
     updatedAt: new Date()
   }
+  ,
+  // Snafles Demo Product
+  {
+    id: "demo-001",
+    name: "Snafles Demo Mug",
+    description: "Matte ceramic mug with Snafles branding.",
+    detailedDescription: "A premium matte-finish ceramic mug featuring the Snafles logo. Perfect for your dev desk and everyday coffee rituals.",
+    price: 12.99,
+    originalPrice: 15.99,
+    images: [
+      "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&h=400&fit=crop"
+    ],
+    category: "Decor",
+    vendor: "vendor-002",
+    stock: 50,
+    rating: 4.9,
+    reviews: 5,
+    featured: true,
+    tags: ["mug", "ceramic", "snafles", "decor"],
+    specifications: {
+      material: "Ceramic",
+      capacity: "350 ml",
+      color: "Matte Black"
+    },
+    customerReviews: [],
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
 ];
 
 const mockVendors = [
