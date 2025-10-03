@@ -39,9 +39,21 @@ A modern, full-stack e-commerce marketplace built with React and Node.js, featur
 ## Installation
 
 ### Prerequisites
-- Node.js v16+
-- MongoDB (local or cloud)
-- Stripe account (for payments)
+- Node.js 18+ (LTS recommended)
+- MongoDB 5.0+ (local or MongoDB Atlas)
+- Stripe account (for payments, use Test mode keys)
+
+Check installed versions:
+```bash
+node -v   # should be >= 18
+npm -v
+mongod --version
+```
+
+Install resources:
+- Node.js: https://nodejs.org/en/download
+- MongoDB Community Server: https://www.mongodb.com/try/download/community
+- MongoDB Atlas: https://www.mongodb.com/cloud/atlas
 
 ### Frontend
 ```bash
@@ -71,12 +83,34 @@ VITE_API_URL=http://localhost:5000
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key
 ```
 
+What they do and where to get them:
+- `VITE_API_URL`: Base URL the frontend calls. For local dev, keep `http://localhost:5000`.
+- `VITE_STRIPE_PUBLISHABLE_KEY`: Stripe Publishable key (starts with `pk_test_...`) from Stripe Dashboard → Developers → API keys. Use Test key for local dev.
+
 ### Backend (.env)
 ```env
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/snafleshub
 JWT_SECRET=your_jwt_secret_key_here
 STRIPE_SECRET_KEY=sk_test_your_secret_key
+```
+
+What they do and where to get them:
+- `PORT`: Port for the backend server. Default `5000`.
+- `MONGODB_URI`: MongoDB connection string. For local, use `mongodb://localhost:27017/snafleshub`. For Atlas, use the connection string from Atlas → Connect; ensure your IP is allowed and your username/password are URL-encoded.
+- `JWT_SECRET`: Any long random string used to sign JWTs. Keep it secret and unique per environment.
+- `STRIPE_SECRET_KEY`: Stripe Secret key (starts with `sk_test_...`) from Stripe Dashboard → Developers → API keys. Use Test key for local dev.
+- `FRONTEND_URL` (optional but recommended): Used for CORS and links in emails, e.g. `http://localhost:5173`.
+- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS` (optional): Configure only if you enable email flows (verification/reset).
+- `UPLOAD_PATH`, `MAX_FILE_SIZE` (optional): File upload destination and size limit in bytes.
+- `DB_MAX_RETRIES`, `DB_RETRY_DELAY_MS` (optional): Control MongoDB connection retry behavior.
+- `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX`, `RATE_LIMIT_AUTH_MAX` (prod only, optional): Tune rate limiting thresholds.
+
+Example: creating `backend/.env` for local dev
+```bash
+cd backend
+cp env.example .env
+# then edit .env with your values
 ```
 
 ## Running
@@ -128,9 +162,15 @@ SNAFLEShub/
     models/
     routes/
     middleware/
+    config/
     server.js
   README.md
 ```
+
+## Running Tests
+- This project does not yet include automated tests.
+- Frontend sanity checks: `npm run lint`, `npm run build`.
+- If/when test scripts are added, run them via `npm test` in the relevant package (root for frontend, `backend/` for API).
 
 ## Security
 - JWT auth, bcrypt password hashing
@@ -172,6 +212,21 @@ npm run build
 ```bash
 # set env vars then deploy backend/
 ```
+
+## Troubleshooting
+- MongoDB connection issues
+  - Error: `ECONNREFUSED` or `MongoNetworkError`: Ensure MongoDB is running locally (`mongod`) or your Atlas cluster is active.
+  - Atlas auth errors: Confirm username/password are correct and URL-encoded; whitelist your IP in Atlas Network Access.
+  - Flaky startup: Adjust `DB_MAX_RETRIES` and `DB_RETRY_DELAY_MS` in `.env`.
+- Stripe not configured
+  - API returns: `Stripe not configured. Set STRIPE_SECRET_KEY.` → Set `STRIPE_SECRET_KEY` in `backend/.env` and restart the server.
+  - Use Test keys in development; Publishable key in the frontend (`VITE_STRIPE_PUBLISHABLE_KEY`), Secret key in the backend (`STRIPE_SECRET_KEY`).
+- CORS blocked in browser
+  - Set `FRONTEND_URL` in `backend/.env` to your frontend origin (e.g., `http://localhost:5173`). Restart backend.
+- Port already in use
+  - Change `PORT` in `backend/.env`, or stop the conflicting process.
+- Invalid/expired JWT after `.env` change
+  - Changing `JWT_SECRET` invalidates existing tokens. Log out and log back in.
 
 ## Contributing
 1. Fork the repo
