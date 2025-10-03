@@ -69,7 +69,7 @@ router.get('/:id', auth, async (req, res) => {
 router.post('/', auth, [
   body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
   body('shipping').isObject().withMessage('Shipping information is required'),
-  body('payment.method').isIn(['card', 'upi', 'cod', 'wallet']).withMessage('Invalid payment method')
+  body('payment.method').isIn(['card', 'upi', 'cod', 'wallet', 'helperpoints']).withMessage('Invalid payment method')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -121,7 +121,7 @@ router.post('/', auth, [
     const tax = Math.round(subtotal * 0.18);
     const discount = coupon ? Math.round(subtotal * (coupon.discount || 0)) : 0;
 
-    // Apply Snapples (loyalty) points as discount: 1 point = ₹1
+    // Apply Snafles (loyalty) points as discount: 1 point = ₹1
     let pointsApplied = 0;
     let pointsDiscount = 0;
     if (redeemPoints && redeemPoints > 0) {

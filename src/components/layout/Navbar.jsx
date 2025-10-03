@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, ShoppingCart, User, Menu, X, Heart, Store, Shield, MessageSquare, Settings } from 'lucide-react'
+import { Search, ShoppingCart, User, Menu, X, Heart, Store, Shield, Settings } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCart } from '../../contexts/CartContext'
 import Logo from '../common/Logo'
@@ -87,16 +87,13 @@ const Navbar = () => {
               Second-Hand
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
             </Link>
-            <Link to="/cart" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
-              Cart
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
-            </Link>
             {user && (
-              <Link to={user.role === 'admin' ? '/dashboard/admin' : user.role === 'vendor' ? '/dashboard/vendor' : '/dashboard/customer'} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
-                Dashboard
+              <Link to="/profile" className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 relative group">
+                Snafles Account
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
               </Link>
             )}
+            {/* Cart and Dashboard links removed per request */}
           </div>
 
           {/* Search Bar */}
@@ -120,18 +117,15 @@ const Navbar = () => {
 
           {/* Actions */}
           <div className="flex items-center space-x-6">
-            {/* Cart - Only show when user is logged in */}
-            {user && (
-              <Link to="/cart" className="relative p-3 text-gray-700 hover:text-blue-600 transition-colors duration-300 group">
-                <ShoppingCart size={24} className="group-hover:scale-110 transition-transform duration-300" />
-                {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-semibold shadow-md">
-                    {cartItemCount}
-                  </span>
-                )}
-              </Link>
-            )}
-
+            {/* Cart (restored near profile) */}
+            <Link to="/cart" className="relative p-3 text-gray-700 hover:text-blue-600 transition-colors duration-300 group">
+              <ShoppingCart size={24} className="group-hover:scale-110 transition-transform duration-300" />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-semibold shadow-md">
+                  {cartItemCount}
+                </span>
+              )}
+            </Link>
             {/* User Menu */}
             {user ? (
               <div className="relative group">
@@ -145,6 +139,10 @@ const Navbar = () => {
                 {/* Dropdown Menu */}
                 <div className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-md rounded-2xl shadow-large border border-gray-200/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
                   <div className="py-3">
+                    <Link to="/profile" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
+                      <User size={16} />
+                      <span>Snafles Account</span>
+                    </Link>
                     <Link to="/settings" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
                       <Settings size={16} />
                       <span>Settings</span>
@@ -153,23 +151,16 @@ const Navbar = () => {
                       <Shield size={16} />
                       <span>Orders</span>
                     </Link>
+                    <Link to="/helper-points" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
+                      <Settings size={16} />
+                      <span>Helper Points</span>
+                    </Link>
                     <Link to="/wishlist" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
                       <Heart size={16} />
                       <span>Wishlist</span>
                     </Link>
                     
-                    {(user.role === 'vendor' || user.role === 'admin') && (
-                      <Link to="/vendor-dashboard" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
-                        <Store size={16} />
-                        <span>Vendor Dashboard</span>
-                      </Link>
-                    )}
-                    {user.role === 'admin' && (
-                      <Link to="/admin-dashboard" className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors duration-300">
-                        <Shield size={16} />
-                        <span>Admin Dashboard</span>
-                      </Link>
-                    )}
+                    {/* Dashboard links removed per request */}
                     <div className="border-t border-gray-200 my-2"></div>
                     <button
                       onClick={handleLogout}
@@ -245,30 +236,20 @@ const Navbar = () => {
               <Link to="/second-hand" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
                 Second-Hand
               </Link>
-              <Link to="/cart" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2">
-                Cart
-              </Link>
+              {/* Cart link removed per request (mobile) */}
               {user ? (
                 <>
                   <div className="border-t border-gray-200 pt-6">
+                    <Link to="/profile" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2 block">
+                      Snafles Account
+                    </Link>
                     <Link to="/settings" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2 block">
                       Settings
                     </Link>
                     <Link to="/orders" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2 block">
                       Orders
                     </Link>
-                    {(user.role === 'vendor' || user.role === 'admin') && (
-                      <Link to="/dashboard/vendor" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2 block">
-                        <Store className="inline h-4 w-4 mr-2" />
-                        Vendor Dashboard
-                      </Link>
-                    )}
-                    {user.role === 'admin' && (
-                      <Link to="/dashboard/admin" onClick={toggleMobileMenu} className="text-gray-700 hover:text-blue-600 font-semibold transition-colors duration-300 py-2 block">
-                        <Shield className="inline h-4 w-4 mr-2" />
-                        Admin Dashboard
-                      </Link>
-                    )}
+                    {/* Dashboard links removed per request (mobile) */}
                     <button
                       onClick={() => {
                         handleLogout()

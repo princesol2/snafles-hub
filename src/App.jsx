@@ -21,7 +21,7 @@ import Checkout from './pages/Checkout'
 import Orders from './pages/Orders'
 import Profile from './pages/Profile'
 import ProfileSettings from './pages/ProfileSettings'
-import Settings from './pages/Settings'
+// Settings page now uses the new UserSettings component
 import Login from './pages/Login'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
@@ -55,14 +55,19 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import AuthGuard from './components/routing/AuthGuard'
 import NotFound from './pages/NotFound'
+import TitleManager from './components/routing/TitleManager'
 import SecondHand from './pages/SecondHand'
 import ReturnsPolicy from './pages/ReturnsPolicy'
+import HelperPointsPage from './pages/HelperPoints'
+import CookiePolicy from './pages/CookiePolicy'
+import UserSettings from './pages/UserSettings'
 
 function App() {
   console.log('App component rendering...')
   
   return (
     <Router>
+        <TitleManager />
         <AuthProvider>
           <CartProvider>
             <ProductProvider>
@@ -141,6 +146,7 @@ function App() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/policies/returns" element={<ReturnsPolicy />} />
+        <Route path="/cookie-policy" element={<CookiePolicy />} />
                       <Route path="/profile" element={
                         <AuthGuard requireAuth={true}>
                           <Profile />
@@ -153,12 +159,17 @@ function App() {
                       } />
                       <Route path="/settings" element={
                         <AuthGuard requireAuth={true}>
-                          <Settings />
+                          <UserSettings />
                         </AuthGuard>
                       } />
                       <Route path="/wishlist" element={
                         <AuthGuard requireAuth={true}>
                           <Wishlist />
+                        </AuthGuard>
+                      } />
+                      <Route path="/helper-points" element={
+                        <AuthGuard requireAuth={true}>
+                          <HelperPointsPage />
                         </AuthGuard>
                       } />
                       

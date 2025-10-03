@@ -38,7 +38,9 @@ const Checkout = () => {
     cvv: '',
     nameOnCard: ''
   })
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card')
   const [redeemPoints, setRedeemPoints] = useState(0)
+  const [errors, setErrors] = useState({})
 
   // Handle direct product purchase
   useEffect(() => {
@@ -68,6 +70,38 @@ const Checkout = () => {
       ...shippingInfo,
       [e.target.name]: e.target.value
     })
+  }
+
+  const validateShipping = () => {
+    const newErrors = {}
+    const required = ['firstName','lastName','email','phone','address','city','state','zipCode','country']
+    required.forEach((field) => {
+      if (!String(shippingInfo[field] || '').trim()) {
+        newErrors[field] = 'Required'
+      }
+    })
+    // Basic email validation
+    const email = String(shippingInfo.email || '').trim()
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = 'Enter a valid email'
+    }
+    // Phone: allow +, spaces, dashes, 7-15 digits total
+    const phone = String(shippingInfo.phone || '').trim()
+    if (phone && !/^\+?[0-9\s-]{7,15}$/.test(phone)) {
+      newErrors.phone = 'Enter a valid phone number'
+    }
+    // ZIP simple check (4-10 alnum)
+    const zip = String(shippingInfo.zipCode || '').trim()
+    if (zip && !/^[A-Za-z0-9\-\s]{4,10}$/.test(zip)) {
+      newErrors.zipCode = 'Enter a valid ZIP/Postal code'
+    }
+
+    setErrors(newErrors)
+    const isValid = Object.keys(newErrors).length === 0
+    if (!isValid) {
+      toast.error('Please correct shipping details before continuing')
+    }
+    return isValid
   }
 
   const handlePaymentChange = (e) => {
@@ -204,9 +238,12 @@ const Checkout = () => {
                         name="firstName"
                         value={shippingInfo.firstName}
                         onChange={handleShippingChange}
-                        className="input"
+                        className={`input ${errors.firstName ? 'border-red-500 focus:ring-red-500' : ''}`}
                         required
                       />
+                      {errors.firstName && (
+                        <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -217,9 +254,12 @@ const Checkout = () => {
                         name="lastName"
                         value={shippingInfo.lastName}
                         onChange={handleShippingChange}
-                        className="input"
+                        className={`input ${errors.lastName ? 'border-red-500 focus:ring-red-500' : ''}`}
                         required
                       />
+                      {errors.lastName && (
+                        <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>
+                      )}
                     </div>
                   </div>
 
@@ -233,9 +273,12 @@ const Checkout = () => {
                         name="email"
                         value={shippingInfo.email}
                         onChange={handleShippingChange}
-                        className="input"
+                        className={`input ${errors.email ? 'border-red-500 focus:ring-red-500' : ''}`}
                         required
                       />
+                      {errors.email && (
+                        <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -246,9 +289,13 @@ const Checkout = () => {
                         name="phone"
                         value={shippingInfo.phone}
                         onChange={handleShippingChange}
-                        className="input"
+                        className={`input ${errors.phone ? 'border-red-500 focus:ring-red-500' : ''}`}
+                        placeholder="e.g. +91 98765 43210"
                         required
                       />
+                      {errors.phone && (
+                        <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
+                      )}
                     </div>
                   </div>
 
@@ -260,10 +307,13 @@ const Checkout = () => {
                       name="address"
                       value={shippingInfo.address}
                       onChange={handleShippingChange}
-                      className="input"
+                      className={`input ${errors.address ? 'border-red-500 focus:ring-red-500' : ''}`}
                       rows={3}
                       required
                     />
+                    {errors.address && (
+                      <p className="mt-1 text-xs text-red-600">{errors.address}</p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -276,9 +326,12 @@ const Checkout = () => {
                         name="city"
                         value={shippingInfo.city}
                         onChange={handleShippingChange}
-                        className="input"
+                        className={`input ${errors.city ? 'border-red-500 focus:ring-red-500' : ''}`}
                         required
                       />
+                      {errors.city && (
+                        <p className="mt-1 text-xs text-red-600">{errors.city}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -289,9 +342,12 @@ const Checkout = () => {
                         name="state"
                         value={shippingInfo.state}
                         onChange={handleShippingChange}
-                        className="input"
+                        className={`input ${errors.state ? 'border-red-500 focus:ring-red-500' : ''}`}
                         required
                       />
+                      {errors.state && (
+                        <p className="mt-1 text-xs text-red-600">{errors.state}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -302,14 +358,19 @@ const Checkout = () => {
                         name="zipCode"
                         value={shippingInfo.zipCode}
                         onChange={handleShippingChange}
-                        className="input"
+                        className={`input ${errors.zipCode ? 'border-red-500 focus:ring-red-500' : ''}`}
                         required
                       />
+                      {errors.zipCode && (
+                        <p className="mt-1 text-xs text-red-600">{errors.zipCode}</p>
+                      )}
                     </div>
                   </div>
 
                   <button
-                    onClick={() => setStep(2)}
+                    onClick={() => {
+                      if (validateShipping()) setStep(2)
+                    }}
                     className="w-full btn btn-primary py-3"
                   >
                     Continue to Payment
@@ -324,6 +385,7 @@ const Checkout = () => {
 
                   <PaymentMethodSelector
                     amount={effectiveTotal}
+                    onMethodChange={(m)=>{ setSelectedPaymentMethod(m); setPaymentInfo(prev=>({...prev, method: m})) }}
                     onSuccess={(paymentData) => {
                       console.log('Payment successful:', paymentData);
                       handlePlaceOrder();
@@ -447,7 +509,7 @@ const Checkout = () => {
               </div>
 
               <div className="bg-white rounded-xl shadow-sm p-6">
-                <h4 className="font-semibold mb-4">Snapples Points</h4>
+                <h4 className="font-semibold mb-4">Snafles Points</h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Available</span>

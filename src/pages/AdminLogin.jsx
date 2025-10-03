@@ -29,7 +29,7 @@ const AdminLogin = () => {
       const result = await login(formData.email, formData.password);
       if (result.success && result.user?.role === 'admin') {
         toast.success('Admin login successful!');
-        navigate('/admin-dashboard');
+        navigate('/dashboard/admin', { replace: true });
       } else {
         toast.error(result.message || 'Invalid admin credentials');
       }
@@ -201,7 +201,7 @@ const AdminLogin = () => {
             </div>
             <div className="flex items-center text-sm text-gray-600">
               <div className="w-2 h-2 bg-purple-600 rounded-full mr-3"></div>
-              Moderate negotiations and transactions
+              Manage refunds, policies, and support
             </div>
           </div>
         </div>

@@ -47,11 +47,14 @@ const SecondHand = () => {
       {!loading && !error && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {items.map(p => (
-            <Link to={`/product/${p._id}`} key={p._id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition">
+            <Link to={`/product/${p._id}`} key={p._id} className="relative bg-white rounded-lg shadow-sm border hover:shadow-md transition">
+              <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                Pre‑Loved
+              </div>
               <img src={Array.isArray(p.images) ? p.images[0] : p.image} alt={p.name} className="w-full h-40 object-cover rounded-t-lg" />
               <div className="p-4">
                 <h3 className="font-semibold text-gray-900 line-clamp-1">{p.name}</h3>
-                <p className="text-sm text-gray-500">{p.condition?.replace('_',' ') || 'good'}</p>
+                <p className="text-sm text-gray-500">Condition: {p.condition?.replace('_',' ') || 'good'}</p>
                 <div className="mt-2 font-bold">₹{(p.price||0).toLocaleString()}</div>
               </div>
             </Link>
@@ -63,4 +66,3 @@ const SecondHand = () => {
 }
 
 export default SecondHand
-

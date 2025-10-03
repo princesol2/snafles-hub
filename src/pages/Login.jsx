@@ -15,7 +15,23 @@ const Login = () => {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const from = location.state?.from?.pathname || '/'
+  // Determine post-auth redirect target
+  const getPostAuthRedirect = () => {
+    const stored = localStorage.getItem('redirectAfterLogin')
+    const fallback = location.state?.from?.pathname || '/'
+    // Disallow redirecting back to auth screens
+    const disallowed = new Set([
+      '/login',
+      '/vendor-login',
+      '/admin-login',
+      '/register',
+      '/forgot-password',
+    ])
+    const target = (stored && !disallowed.has(stored)) ? stored : fallback
+    // Clean up once read
+    if (stored) localStorage.removeItem('redirectAfterLogin')
+    return target || '/'
+  }
 
   const [formData, setFormData] = useState({
     name: '',
@@ -60,12 +76,9 @@ const Login = () => {
       if (result && result.success) {
         console.log('Google login successful, user:', result.user)
         toast.success(`Welcome, ${result.user.name}!`)
-        
-        // Wait a moment for state to update
-        setTimeout(() => {
-          console.log('Navigating to:', from)
-          navigate(from, { replace: true })
-        }, 100)
+        // Redirect to intended page if any, else home
+        const dest = getPostAuthRedirect()
+        setTimeout(() => navigate(dest, { replace: true }), 100)
       } else {
         console.error('Google login failed:', result)
         toast.error(result?.message || 'Google login failed. Please try again.')
@@ -94,8 +107,8 @@ const Login = () => {
         const result = await login(formData.email, formData.password)
         if (result.success) {
           toast.success(`Welcome back, ${result.user.name.split(' ')[0]}!`)
-          const role = result.user.role
-          const dest = role === 'admin' ? '/dashboard/admin' : role === 'vendor' ? '/dashboard/vendor' : '/dashboard/customer'
+          // Prefer redirect target stored by guards; else home
+          const dest = getPostAuthRedirect()
           navigate(dest, { replace: true })
         } else {
           toast.error(result.message)
@@ -110,8 +123,7 @@ const Login = () => {
         const result = await register(formData)
         if (result.success) {
           toast.success('Account created successfully!')
-          const role = result.user.role
-          const dest = role === 'admin' ? '/dashboard/admin' : role === 'vendor' ? '/dashboard/vendor' : '/dashboard/customer'
+          const dest = getPostAuthRedirect()
           navigate(dest, { replace: true })
         } else {
           toast.error(result.message)

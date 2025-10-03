@@ -100,6 +100,202 @@ router.post('/wishlist', auth, [
   }
 });
 
+// Addresses CRUD
+// @route   GET /api/users/addresses
+// @desc    List addresses for current user
+// @access  Private
+router.get('/addresses', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('addresses');
+    const addresses = (user.addresses || []).map(a => ({
+      id: a._id.toString(),
+      fullName: a.fullName,
+      phone: a.phone,
+      addressLine1: a.addressLine1,
+      addressLine2: a.addressLine2,
+      city: a.city,
+      state: a.state,
+      zipCode: a.zipCode,
+      country: a.country,
+      isDefault: !!a.isDefault,
+    }));
+    res.json({ addresses });
+  } catch (error) {
+    console.error('Get addresses error:', error);
+    res.status(500).json({ message: 'Server error while fetching addresses' });
+  }
+});
+
+// @route   POST /api/users/addresses
+// @desc    Add a new address
+// @access  Private
+router.post(
+  '/addresses',
+  auth,
+  [
+    body('fullName').notEmpty().withMessage('Full name is required'),
+    body('phone').notEmpty().withMessage('Phone is required'),
+    body('addressLine1').notEmpty().withMessage('Address Line 1 is required'),
+    body('city').notEmpty().withMessage('City is required'),
+    body('state').notEmpty().withMessage('State is required'),
+    body('zipCode').notEmpty().withMessage('ZIP Code is required'),
+    body('country').optional().isString(),
+    body('isDefault').optional().isBoolean(),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+      const user = await User.findById(req.user._id);
+      user.addresses = user.addresses || [];
+
+      const {
+        fullName,
+        phone,
+        addressLine1,
+        addressLine2,
+        city,
+        state,
+        zipCode,
+        country = 'India',
+        isDefault = false,
+      } = req.body;
+
+      // ensure single default
+      if (isDefault || user.addresses.length === 0) {
+        user.addresses.forEach(a => (a.isDefault = false));
+      }
+
+      user.addresses.push({
+        fullName,
+        phone,
+        addressLine1,
+        addressLine2,
+        city,
+        state,
+        zipCode,
+        country,
+        isDefault: isDefault || user.addresses.length === 0,
+      });
+      await user.save();
+
+      const added = user.addresses[user.addresses.length - 1];
+      res.status(201).json({
+        message: 'Address added successfully',
+        address: {
+          id: added._id.toString(),
+          fullName: added.fullName,
+          phone: added.phone,
+          addressLine1: added.addressLine1,
+          addressLine2: added.addressLine2,
+          city: added.city,
+          state: added.state,
+          zipCode: added.zipCode,
+          country: added.country,
+          isDefault: !!added.isDefault,
+        },
+      });
+    } catch (error) {
+      console.error('Add address error:', error);
+      res.status(500).json({ message: 'Server error while adding address' });
+    }
+  }
+);
+
+// @route   PUT /api/users/addresses/:id
+// @desc    Update an address
+// @access  Private
+router.put(
+  '/addresses/:id',
+  auth,
+  [
+    body('fullName').optional().notEmpty(),
+    body('phone').optional().notEmpty(),
+    body('addressLine1').optional().notEmpty(),
+    body('addressLine2').optional(),
+    body('city').optional().notEmpty(),
+    body('state').optional().notEmpty(),
+    body('zipCode').optional().notEmpty(),
+    body('country').optional().isString(),
+    body('isDefault').optional().isBoolean(),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+      const user = await User.findById(req.user._id);
+      const { id } = req.params;
+      const idx = (user.addresses || []).findIndex(a => a._id.toString() === id);
+      if (idx === -1) return res.status(404).json({ message: 'Address not found' });
+
+      const updates = req.body || {};
+      // Single default enforcement
+      if (updates.isDefault === true) {
+        user.addresses.forEach((a, i) => (a.isDefault = i === idx));
+      }
+
+      const target = user.addresses[idx];
+      const allowed = ['fullName', 'phone', 'addressLine1', 'addressLine2', 'city', 'state', 'zipCode', 'country', 'isDefault'];
+      allowed.forEach(k => {
+        if (updates[k] !== undefined) target[k] = updates[k];
+      });
+
+      await user.save();
+      const updated = user.addresses[idx];
+      res.json({
+        message: 'Address updated successfully',
+        address: {
+          id: updated._id.toString(),
+          fullName: updated.fullName,
+          phone: updated.phone,
+          addressLine1: updated.addressLine1,
+          addressLine2: updated.addressLine2,
+          city: updated.city,
+          state: updated.state,
+          zipCode: updated.zipCode,
+          country: updated.country,
+          isDefault: !!updated.isDefault,
+        },
+      });
+    } catch (error) {
+      console.error('Update address error:', error);
+      res.status(500).json({ message: 'Server error while updating address' });
+    }
+  }
+);
+
+// @route   DELETE /api/users/addresses/:id
+// @desc    Remove an address
+// @access  Private
+router.delete('/addresses/:id', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const { id } = req.params;
+    const list = user.addresses || [];
+    const idx = list.findIndex(a => a._id.toString() === id);
+    if (idx === -1) return res.status(404).json({ message: 'Address not found' });
+
+    const wasDefault = !!list[idx].isDefault;
+    list.splice(idx, 1);
+
+    // If default removed, set first as default if any remain
+    if (wasDefault && list.length > 0) {
+      list.forEach((a, i) => (a.isDefault = i === 0));
+    }
+
+    user.addresses = list;
+    await user.save();
+    res.json({ message: 'Address deleted successfully' });
+  } catch (error) {
+    console.error('Delete address error:', error);
+    res.status(500).json({ message: 'Server error while deleting address' });
+  }
+});
+
 // @route   DELETE /api/users/wishlist/:productId
 // @desc    Remove item from wishlist
 // @access  Private

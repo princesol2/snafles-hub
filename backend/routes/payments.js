@@ -14,6 +14,36 @@ try {
   console.warn('Stripe SDK not loaded:', e?.message || e);
 }
 
+// Utility: allocate helper points from available helpers (excluding borrower)
+async function allocateFromHelpers(borrowerId, amountNeeded, orderId) {
+  const HelperPoints = require('../models/HelperPoints');
+  const HelperPointsObligation = require('../models/HelperPointsObligation');
+  let remaining = amountNeeded;
+  let allocated = 0;
+  // Find helpers with positive balances, exclude borrower
+  const helpers = await HelperPoints.find({ user: { $ne: borrowerId }, balance: { $gt: 0 } })
+    .sort({ balance: -1 })
+    .limit(50);
+  for (const h of helpers) {
+    if (remaining <= 0) break;
+    const take = Math.min(h.balance, remaining);
+    if (take <= 0) continue;
+    h.balance -= take;
+    h.transactions.push({ type: 'help', amount: take, helperUser: h.user, recipientUser: borrowerId, orderId, note: 'Covered shortfall' });
+    await h.save();
+    // Mirror transaction in borrower account for history
+    let borrowerAcct = await HelperPoints.findOne({ user: borrowerId });
+    if (!borrowerAcct) borrowerAcct = await HelperPoints.create({ user: borrowerId, balance: 0, transactions: [] });
+    borrowerAcct.transactions.push({ type: 'help', amount: take, helperUser: h.user, recipientUser: borrowerId, orderId, note: 'Help received' });
+    await borrowerAcct.save();
+    await h.save();
+    await HelperPointsObligation.create({ borrower: borrowerId, helper: h.user, amountOutstanding: take, orderId });
+    allocated += take;
+    remaining -= take;
+  }
+  return { allocated, remaining };
+}
+
 // @route   POST /api/payments/create-payment-intent
 // @desc    Create payment intent for card/upi/cod/wallet
 // @access  Private
@@ -21,7 +51,7 @@ router.post('/create-payment-intent', auth, [
   body('amount').isFloat({ min: 1 }).withMessage('Amount must be a positive number'),
   body('currency').optional().isIn(['usd', 'inr', 'eur']).withMessage('Invalid currency'),
   body('orderId').optional().isString(),
-  body('paymentMethod').optional().isIn(['card', 'upi', 'cod', 'wallet']).withMessage('Invalid payment method')
+  body('paymentMethod').optional().isIn(['card', 'upi', 'cod', 'wallet', 'helperpoints']).withMessage('Invalid payment method')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -93,6 +123,25 @@ router.post('/create-payment-intent', auth, [
       });
     }
 
+    if (paymentMethod === 'helperpoints') {
+      // Pre-authorize helper pool has sufficient balance overall
+      const HelperPoints = require('../models/HelperPoints');
+      const totalPoolAgg = await HelperPoints.aggregate([
+        { $match: { user: { $ne: req.user._id } } },
+        { $group: { _id: null, total: { $sum: '$balance' } } }
+      ]);
+      const pool = totalPoolAgg[0]?.total || 0;
+      if (pool < amount) {
+        return res.status(400).json({ message: 'Insufficient Helper Points available in the network' });
+      }
+      const pid = `helper_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+      return res.json({
+        message: 'Helper Points authorized',
+        paymentIntentId: pid,
+        method: 'helperpoints'
+      });
+    }
+
     return res.status(400).json({ message: 'Unsupported payment method' });
   } catch (error) {
     console.error('Create payment intent error:', error);
@@ -138,11 +187,32 @@ router.post('/confirm-payment', auth, [
       // Deduct wallet and mark completed
       const user = await User.findById(req.user._id).select('walletBalance loyaltyPoints');
       if (!user) return res.status(404).json({ message: 'User not found' });
-      if ((user.walletBalance || 0) < (order.total || 0)) {
-        return res.status(400).json({ message: 'Insufficient wallet balance' });
+      const need = (order.total || 0);
+      let wallet = user.walletBalance || 0;
+      if (wallet < need) {
+        // Try to cover shortfall from helpers automatically
+        const shortfall = need - wallet;
+        const { allocated, remaining } = await allocateFromHelpers(req.user._id, shortfall, order._id);
+        if (remaining > 0) {
+          return res.status(400).json({ message: 'Insufficient funds: wallet + Helper Points cannot cover total' });
+        }
+        // Use all wallet + helper allocation
+        wallet = 0;
+        user.walletBalance = 0;
+      } else {
+        user.walletBalance = wallet - need;
       }
-      user.walletBalance = (user.walletBalance || 0) - (order.total || 0);
       await user.save();
+      order.payment.status = 'completed';
+      order.payment.transactionId = paymentIntentId;
+      order.status = 'confirmed';
+    } else if (method === 'helperpoints') {
+      // Deduct entirely from helpers
+      const need = (order.total || 0);
+      const { allocated, remaining } = await allocateFromHelpers(req.user._id, need, order._id);
+      if (remaining > 0) {
+        return res.status(400).json({ message: 'Insufficient Helper Points available' });
+      }
       order.payment.status = 'completed';
       order.payment.transactionId = paymentIntentId;
       order.status = 'confirmed';
@@ -153,7 +223,7 @@ router.post('/confirm-payment', auth, [
       order.status = 'pending';
     }
 
-    // Award Snapples points on successful non-COD payments
+    // Award Snafles points on successful non-COD payments
     if (order.payment.status === 'completed') {
       const earned = Math.floor((order.total || 0) / 100); // 1 point per ₹100
       if (earned > 0) {
@@ -239,42 +309,20 @@ router.post('/refund', auth, [
 // @route   GET /api/payments/methods
 // @desc    Get available payment methods
 // @access  Public
+// @route   GET /api/payments/methods
+// @desc    Get available payment methods
+// @access  Public
 router.get('/methods', (req, res) => {
   try {
     const paymentMethods = [
-      {
-        id: 'card',
-        name: 'Credit/Debit Card',
-        description: 'Visa, Mastercard, American Express',
-        icon: '💳',
-        enabled: true
-      },
-      {
-        id: 'upi',
-        name: 'UPI',
-        description: 'Google Pay, PhonePe, Paytm',
-        icon: '📱',
-        enabled: true
-      },
-      {
-        id: 'netbanking',
-        name: 'Net Banking',
-        description: 'All major banks',
-        icon: '🏦',
-        enabled: true
-      },
-      {
-        id: 'cod',
-        name: 'Cash on Delivery',
-        description: 'Pay when your order is delivered',
-        icon: '💰',
-        enabled: true
-      }
+      { id: 'card', name: 'Credit/Debit Card', description: 'Visa, Mastercard, American Express', icon: '??', enabled: true },
+      { id: 'upi', name: 'UPI', description: 'Google Pay, PhonePe, Paytm', icon: '??', enabled: true },
+      { id: 'netbanking', name: 'Net Banking', description: 'All major banks', icon: '??', enabled: true },
+      { id: 'cod', name: 'Cash on Delivery', description: 'Pay when your order is delivered', icon: '??', enabled: true },
+      { id: 'helperpoints', name: 'Helper Points', description: 'Use community Helper Points to pay', icon: '??', enabled: true },
     ];
 
-    res.json({
-      paymentMethods
-    });
+    res.json({ paymentMethods });
   } catch (error) {
     console.error('Get payment methods error:', error);
     res.status(500).json({ message: 'Server error while fetching payment methods' });
@@ -282,3 +330,56 @@ router.get('/methods', (req, res) => {
 });
 
 module.exports = router;
+ 
+// Additional route: wallet top-up with auto-reimbursement
+router.post('/wallet-topup', auth, [
+  body('amount').isFloat({ min: 1 }).withMessage('Amount must be positive')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    const topupAmount = Math.floor(parseFloat(req.body.amount));
+    const User = require('../models/User');
+    const HelperPoints = require('../models/HelperPoints');
+    const HelperPointsObligation = require('../models/HelperPointsObligation');
+
+    const user = await User.findById(req.user._id).select('walletBalance');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    user.walletBalance = (user.walletBalance || 0) + topupAmount;
+    await user.save();
+
+    // Auto-reimburse from wallet to helpers
+    let available = user.walletBalance || 0;
+    let reimbursedTotal = 0;
+    const obligations = await HelperPointsObligation.find({ borrower: req.user._id, amountOutstanding: { $gt: 0 } }).sort({ createdAt: 1 });
+    for (const ob of obligations) {
+      if (available <= 0) break;
+      const pay = Math.min(available, ob.amountOutstanding);
+      if (pay <= 0) continue;
+      // Deduct from wallet
+      available -= pay;
+      // Credit helper's helper points balance and transaction log
+      const helperAcct = await HelperPoints.findOne({ user: ob.helper }) || await HelperPoints.create({ user: ob.helper, balance: 0, transactions: [] });
+      helperAcct.balance = (helperAcct.balance || 0) + pay;
+      helperAcct.transactions.push({ type: 'reimburse', amount: pay, helperUser: ob.helper, recipientUser: req.user._id, orderId: ob.orderId, note: 'Auto-reimbursement from borrower top-up' });
+      await helperAcct.save();
+      // Update obligation
+      ob.amountOutstanding -= pay;
+      await ob.save();
+      reimbursedTotal += pay;
+    }
+    // Persist reduced wallet after reimbursements
+    const user2 = await User.findById(req.user._id).select('walletBalance');
+    user2.walletBalance = available;
+    await user2.save();
+
+    res.json({ message: 'Wallet topped up', walletBalance: available, reimbursed: reimbursedTotal });
+  } catch (error) {
+    console.error('Wallet top-up error:', error);
+    res.status(500).json({ message: error?.message || 'Server error while topping up wallet' });
+  }
+});
+
+
+
+

@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
-import { CreditCard, Smartphone, Building2, Truck, Shield, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CreditCard, Smartphone, Building2, Truck, Shield, CheckCircle, Award } from 'lucide-react';
 import StripePayment from './StripePayment';
 import UpiPayment from './UpiPayment';
 import NetBankingPayment from './NetBankingPayment';
 import CodPayment from './CodPayment';
+import HelperPointsPayment from './HelperPointsPayment';
 
-const PaymentMethodSelector = ({ amount, onSuccess, onError, orderId }) => {
+const PaymentMethodSelector = ({ amount, onSuccess, onError, orderId, onMethodChange }) => {
   const [selectedMethod, setSelectedMethod] = useState('card');
   const [paymentMethods, setPaymentMethods] = useState([]);
+
+  useEffect(() => {
+    if (onMethodChange) onMethodChange(selectedMethod);
+  }, [selectedMethod]);
 
   const availableMethods = [
     {
@@ -39,6 +44,14 @@ const PaymentMethodSelector = ({ amount, onSuccess, onError, orderId }) => {
       name: 'Cash on Delivery',
       description: 'Pay when your order is delivered',
       icon: Truck,
+      color: 'orange',
+      enabled: true
+    },
+    {
+      id: 'helperpoints',
+      name: 'Helper Points',
+      description: 'Use community Helper Points to pay',
+      icon: Award,
       color: 'orange',
       enabled: true
     }
@@ -76,6 +89,15 @@ const PaymentMethodSelector = ({ amount, onSuccess, onError, orderId }) => {
       case 'cod':
         return (
           <CodPayment
+            amount={amount}
+            onSuccess={onSuccess}
+            onError={onError}
+            orderId={orderId}
+          />
+        );
+      case 'helperpoints':
+        return (
+          <HelperPointsPayment
             amount={amount}
             onSuccess={onSuccess}
             onError={onError}

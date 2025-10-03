@@ -29,7 +29,7 @@ const VendorLogin = () => {
       const result = await loginVendor(formData.email, formData.password);
       if (result.success) {
         toast.success('Login successful!');
-        navigate('/vendor-dashboard');
+        navigate('/dashboard/vendor', { replace: true });
       } else {
         toast.error(result.message || 'Invalid vendor credentials');
       }

@@ -1,676 +1,610 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Lock, Save, Eye, EyeOff, CreditCard, Shield, Trash2, Smartphone, Mail, Bell, Globe, Key, AlertTriangle } from 'lucide-react';
-import PaymentMethodManager from '../components/payment/PaymentMethodManager';
+import { useNavigate } from 'react-router-dom';
+import { 
+  User, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Calendar, 
+  Shield, 
+  Bell, 
+  Eye, 
+  EyeOff, 
+  Save, 
+  ArrowLeft,
+  Camera,
+  Check,
+  X,
+  AlertTriangle,
+  Lock,
+  Key,
+  Smartphone,
+  Globe,
+  CreditCard,
+  Heart,
+  Star,
+  MessageSquare,
+  Settings as SettingsIcon
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const ProfileSettings = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateProfile } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [notifications, setNotifications] = useState({
-    email: true,
-    sms: false,
-    push: true,
-    marketing: false
+  const [loading, setLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Profile form state
+  const [profileData, setProfileData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    dateOfBirth: '',
+    gender: '',
+    location: '',
+    bio: '',
+    website: '',
+    avatar: ''
   });
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
+
+  // Security form state
+  const [securityData, setSecurityData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false
+
+  // Notification preferences
+  const [notifications, setNotifications] = useState({
+    emailNotifications: true,
+    smsNotifications: false,
+    pushNotifications: true,
+    marketingEmails: false,
+    orderUpdates: true,
+    priceAlerts: true,
+    newProducts: false,
+    vendorUpdates: true
   });
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const togglePasswordVisibility = (field) => {
-    setShowPasswords(prev => ({
-      ...prev,
-      [field]: !prev[field]
-    }));
-  };
-
-  const handleDeleteAccount = async () => {
-    setLoading(true);
+  const handleSavePreferences = async () => {
     try {
-      // Simulate API call for account deletion
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // In a real app, this would call the backend to delete the account
-      toast.success('Account deleted successfully. You will be logged out.');
-      
-      // Logout user and redirect
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 2000);
-    } catch (error) {
-      toast.error('Failed to delete account. Please try again.');
-    } finally {
-      setLoading(false);
-      setShowDeleteModal(false);
-    }
-  };
-
-  const handleToggle2FA = async () => {
-    setLoading(true);
-    try {
-      // Simulate API call for 2FA toggle
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setTwoFactorEnabled(!twoFactorEnabled);
-      toast.success(twoFactorEnabled ? 'Two-factor authentication disabled' : 'Two-factor authentication enabled');
-    } catch (error) {
-      toast.error('Failed to update two-factor authentication settings');
+      setLoading(true);
+      await updateProfile({
+        preferences: {
+          newsletter: !!notifications.marketingEmails,
+          smsNotifications: !!notifications.smsNotifications,
+        },
+      });
+      toast.success('Preferences saved');
+    } catch (e) {
+      toast.error('Failed to save preferences');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleNotificationChange = (type) => {
-    setNotifications(prev => ({
-      ...prev,
-      [type]: !prev[type]
-    }));
+  // Privacy settings removed as requested
+
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        dateOfBirth: user.dateOfBirth || '',
+        gender: user.gender || '',
+        location: user.location || '',
+        bio: user.bio || '',
+        website: user.website || '',
+        avatar: user.avatar || ''
+      });
+    }
+  }, [user]);
+
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      await updateProfile(profileData);
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      toast.error('Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const validateForm = () => {
-    if (!formData.name.trim()) {
-      setMessage({ type: 'error', text: 'Name is required' });
-      return false;
-    }
-
-    if (!formData.email.trim()) {
-      setMessage({ type: 'error', text: 'Email is required' });
-      return false;
-    }
-
-    // If changing password, validate password fields
-    if (formData.newPassword || formData.currentPassword || formData.confirmPassword) {
-      if (!formData.currentPassword) {
-        setMessage({ type: 'error', text: 'Current password is required to change password' });
-        return false;
-      }
-
-      if (!formData.newPassword) {
-        setMessage({ type: 'error', text: 'New password is required' });
-        return false;
-      }
-
-      if (formData.newPassword.length < 6) {
-        setMessage({ type: 'error', text: 'New password must be at least 6 characters' });
-        return false;
-      }
-
-      if (formData.newPassword !== formData.confirmPassword) {
-        setMessage({ type: 'error', text: 'New passwords do not match' });
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-  const handleSubmit = async (e) => {
+  const handlePasswordChange = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    if (securityData.newPassword !== securityData.confirmPassword) {
+      toast.error('New passwords do not match');
       return;
     }
-
+    
+    if (securityData.newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters long');
+      return;
+    }
+    
     setLoading(true);
-    setMessage({ type: '', text: '' });
-
     try {
-      // Simulate API call for updating profile
+      // Simulate password change API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Update user context with new data
-      const updatedUser = {
-        ...user,
-        name: formData.name,
-        email: formData.email
-      };
-
-      updateUser(updatedUser);
-
-      setMessage({ 
-        type: 'success', 
-        text: 'Profile updated successfully!' 
-      });
-
-      // Clear password fields after successful update
-      setFormData(prev => ({
-        ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      }));
-
+      toast.success('Password changed successfully!');
+      setSecurityData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: 'Failed to update profile. Please try again.' 
-      });
+      toast.error('Failed to change password');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleNotificationChange = (key, value) => {
+    setNotifications(prev => ({ ...prev, [key]: value }));
+    toast.success('Notification preferences updated');
+  };
+
+  // Removed: privacy change handler
+
+  const tabs = [
+    { id: 'profile', name: 'Profile', icon: User },
+    { id: 'security', name: 'Security', icon: Shield },
+    { id: 'notifications', name: 'Notifications', icon: Bell }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 bg-gray-900 py-8">
-      <div className="container mx-auto px-4">
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 text-white mb-2">
-              Profile Settings
-            </h1>
-            <p className="text-gray-600 text-gray-400">
-              Manage your account information and security settings
-            </p>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </button>
+          <h1 className="text-3xl font-bold text-gray-900">Account Settings</h1>
+          <p className="text-gray-600 mt-2">Manage your account preferences and security settings</p>
+        </div>
 
-            {/* Tab Navigation */}
-            <div className="bg-white bg-gray-800 rounded-2xl shadow-lg mb-6">
-              <div className="flex border-b border-gray-200 border-gray-700 overflow-x-auto">
-                <button
-                  onClick={() => setActiveTab('profile')}
-                  className={`flex-1 py-4 px-4 text-center font-medium transition-colors whitespace-nowrap ${
-                    activeTab === 'profile'
-                      ? 'text-navy-600 border-b-2 border-navy-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <User className="h-5 w-5 mx-auto mb-2" />
-                  Profile
-                </button>
-                <button
-                  onClick={() => setActiveTab('payments')}
-                  className={`flex-1 py-4 px-4 text-center font-medium transition-colors whitespace-nowrap ${
-                    activeTab === 'payments'
-                      ? 'text-navy-600 border-b-2 border-navy-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <CreditCard className="h-5 w-5 mx-auto mb-2" />
-                  Payments
-                </button>
-                <button
-                  onClick={() => setActiveTab('security')}
-                  className={`flex-1 py-4 px-4 text-center font-medium transition-colors whitespace-nowrap ${
-                    activeTab === 'security'
-                      ? 'text-navy-600 border-b-2 border-navy-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <Shield className="h-5 w-5 mx-auto mb-2" />
-                  Security
-                </button>
-                <button
-                  onClick={() => setActiveTab('notifications')}
-                  className={`flex-1 py-4 px-4 text-center font-medium transition-colors whitespace-nowrap ${
-                    activeTab === 'notifications'
-                      ? 'text-navy-600 border-b-2 border-navy-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <Bell className="h-5 w-5 mx-auto mb-2" />
-                  Notifications
-                </button>
-                <button
-                  onClick={() => setActiveTab('danger')}
-                  className={`flex-1 py-4 px-4 text-center font-medium transition-colors whitespace-nowrap ${
-                    activeTab === 'danger'
-                      ? 'text-red-600 border-b-2 border-red-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <AlertTriangle className="h-5 w-5 mx-auto mb-2" />
-                  Danger Zone
-                </button>
-              </div>
-            </div>
-
-          {/* Profile Form */}
-          {activeTab === 'profile' && (
-            <div className="bg-white bg-gray-800 rounded-2xl shadow-lg p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Basic Information */}
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900 text-white flex items-center">
-                  <User className="h-5 w-5 mr-2" />
-                  Basic Information
-                </h2>
-
-                {/* Name Field */}
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 text-gray-300 mb-2">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="input w-full"
-                    placeholder="Enter your full name"
-                    required
-                  />
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm border p-6">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl font-semibold">
+                  {user?.name?.charAt(0) || 'U'}
                 </div>
-
-                {/* Email Field */}
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 text-gray-300 mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="input w-full"
-                    placeholder="Enter your email address"
-                    required
-                  />
+                  <h3 className="font-semibold text-gray-900">{user?.name}</h3>
+                  <p className="text-sm text-gray-500">{user?.email}</p>
                 </div>
               </div>
-
-              {/* Password Section */}
-              <div className="space-y-4 pt-6 border-t border-gray-200 border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-900 text-white flex items-center">
-                  <Lock className="h-5 w-5 mr-2" />
-                  Change Password
-                </h2>
-                <p className="text-sm text-gray-600 text-gray-400">
-                  Leave password fields empty if you don't want to change your password
-                </p>
-
-                {/* Current Password */}
-                <div>
-                  <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 text-gray-300 mb-2">
-                    Current Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPasswords.current ? "text" : "password"}
-                      id="currentPassword"
-                      name="currentPassword"
-                      value={formData.currentPassword}
-                      onChange={handleInputChange}
-                      className="input w-full pr-12"
-                      placeholder="Enter current password"
-                    />
+              
+              <nav className="space-y-2">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
                     <button
-                      type="button"
-                      onClick={() => togglePasswordVisibility('current')}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPasswords.current ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* New Password */}
-                <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 text-gray-300 mb-2">
-                    New Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPasswords.new ? "text" : "password"}
-                      id="newPassword"
-                      name="newPassword"
-                      value={formData.newPassword}
-                      onChange={handleInputChange}
-                      className="input w-full pr-12"
-                      placeholder="Enter new password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => togglePasswordVisibility('new')}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPasswords.new ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Confirm Password */}
-                <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 text-gray-300 mb-2">
-                    Confirm New Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPasswords.confirm ? "text" : "password"}
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      className="input w-full pr-12"
-                      placeholder="Confirm new password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => togglePasswordVisibility('confirm')}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPasswords.confirm ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Message Display */}
-              {message.text && (
-                <div className={`p-4 rounded-lg ${
-                  message.type === 'success' 
-                    ? 'bg-green-50 text-green-800 border border-green-200' 
-                    : 'bg-red-50 text-red-800 border border-red-200'
-                }`}>
-                  {message.text}
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <div className="pt-6">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn btn-primary w-full flex items-center justify-center"
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Update Profile
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-            </div>
-          )}
-
-          {/* Payment Methods Tab */}
-          {activeTab === 'payments' && (
-            <div className="bg-white bg-gray-800 rounded-2xl shadow-lg p-8">
-              <PaymentMethodManager />
-            </div>
-          )}
-
-          {/* Security Tab */}
-          {activeTab === 'security' && (
-            <div className="bg-white bg-gray-800 rounded-2xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 text-white mb-6 flex items-center">
-                <Shield className="h-6 w-6 mr-3 text-navy-600" />
-                Security Settings
-              </h2>
-
-              <div className="space-y-6">
-                {/* Two-Factor Authentication */}
-                <div className="border border-gray-200 border-gray-700 rounded-xl p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Smartphone className="h-6 w-6 text-navy-600" />
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 text-white">Two-Factor Authentication</h3>
-                        <p className="text-sm text-gray-600 text-gray-400">
-                          Add an extra layer of security to your account
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={handleToggle2FA}
-                      disabled={loading}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        twoFactorEnabled
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                        activeTab === tab.id
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                          : 'text-gray-700 hover:bg-gray-50'
                       }`}
                     >
-                      {twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                      <Icon className="h-5 w-5" />
+                      <span className="font-medium">{tab.name}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            {/* Profile Tab */}
+            {activeTab === 'profile' && (
+              <div className="bg-white rounded-xl shadow-sm border p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Profile Information</h2>
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <Check className="h-4 w-4 text-green-500" />
+                    <span>Profile is public</span>
+                  </div>
+                </div>
+
+                <form onSubmit={handleProfileUpdate} className="space-y-6">
+                  {/* Avatar Section */}
+                  <div className="flex items-center space-x-6">
+                    <div className="relative">
+                      <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-semibold">
+                        {profileData.name?.charAt(0) || 'U'}
+                      </div>
+                      <button
+                        type="button"
+                        className="absolute -bottom-2 -right-2 bg-white border-2 border-gray-200 rounded-full p-2 hover:bg-gray-50"
+                      >
+                        <Camera className="h-4 w-4 text-gray-600" />
+                      </button>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Profile Picture</h3>
+                      <p className="text-sm text-gray-500">Click the camera icon to upload a new photo</p>
+                    </div>
+                  </div>
+
+                  {/* Basic Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={profileData.name}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter your full name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={profileData.email}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter your email"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        value={profileData.phone}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="+1 (555) 123-4567"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Date of Birth
+                      </label>
+                      <input
+                        type="date"
+                        value={profileData.dateOfBirth}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Gender
+                      </label>
+                      <select
+                        value={profileData.gender}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, gender: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                        <option value="prefer-not-to-say">Prefer not to say</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        value={profileData.location}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, location: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="City, Country"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Additional Information */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Bio
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={profileData.bio}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Tell us about yourself..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Website
+                    </label>
+                    <input
+                      type="url"
+                      value={profileData.website}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, website: e.target.value }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="https://yourwebsite.com"
+                    />
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                    >
+                      <Save className="h-4 w-4" />
+                      <span>{loading ? 'Saving...' : 'Save Changes'}</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Security Tab */}
+            {activeTab === 'security' && (
+              <div className="space-y-6">
+                {/* Password Change */}
+                <div className="bg-white rounded-xl shadow-sm border p-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Change Password</h2>
+                  
+                  <form onSubmit={handlePasswordChange} className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Current Password *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showCurrentPassword ? 'text' : 'password'}
+                          required
+                          value={securityData.currentPassword}
+                          onChange={(e) => setSecurityData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                          className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Enter current password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        New Password *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showNewPassword ? 'text' : 'password'}
+                          required
+                          value={securityData.newPassword}
+                          onChange={(e) => setSecurityData(prev => ({ ...prev, newPassword: e.target.value }))}
+                          className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Enter new password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">Password must be at least 8 characters long</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Confirm New Password *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          required
+                          value={securityData.confirmPassword}
+                          onChange={(e) => setSecurityData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                          className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Confirm new password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                      >
+                        <Lock className="h-4 w-4" />
+                        <span>{loading ? 'Updating...' : 'Update Password'}</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Two-Factor Authentication */}
+                <div className="bg-white rounded-xl shadow-sm border p-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Two-Factor Authentication</h2>
+                  
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <Shield className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">SMS Authentication</h3>
+                        <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
+                      </div>
+                    </div>
+                    <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                      Enable
                     </button>
                   </div>
                 </div>
 
-                {/* Password Change */}
-                <div className="border border-gray-200 border-gray-700 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 text-white mb-4 flex items-center">
-                    <Key className="h-5 w-5 mr-2 text-navy-600" />
-                    Change Password
-                  </h3>
-                  <p className="text-sm text-gray-600 text-gray-400 mb-4">
-                    Update your password to keep your account secure
-                  </p>
-                  <button
-                    onClick={() => setActiveTab('profile')}
-                    className="btn btn-outline"
-                  >
-                    Change Password
-                  </button>
-                </div>
-
-                {/* Login History */}
-                <div className="border border-gray-200 border-gray-700 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 text-white mb-4 flex items-center">
-                    <Globe className="h-5 w-5 mr-2 text-navy-600" />
-                    Recent Login Activity
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 bg-gray-700 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900 text-white">Current Session</p>
-                        <p className="text-sm text-gray-600 text-gray-400">Chrome on Windows • Mumbai, India</p>
+                {/* Login Activity */}
+                <div className="bg-white rounded-xl shadow-sm border p-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Login Activity</h2>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Smartphone className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900">Chrome on Windows</h3>
+                          <p className="text-sm text-gray-500">New Delhi, India • Just now</p>
+                        </div>
                       </div>
-                      <span className="text-sm text-green-600 font-medium">Active</span>
+                      <span className="text-sm text-green-600 font-semibold">Current Session</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 bg-gray-700 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900 text-white">Previous Session</p>
-                        <p className="text-sm text-gray-600 text-gray-400">Mobile App • 2 hours ago</p>
+                    
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                          <Smartphone className="h-5 w-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900">Safari on iPhone</h3>
+                          <p className="text-sm text-gray-500">New Delhi, India • 2 hours ago</p>
+                        </div>
                       </div>
-                      <span className="text-sm text-gray-500">Ended</span>
+                      <button className="text-sm text-red-600 hover:text-red-700">Revoke</button>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Notifications Tab */}
-          {activeTab === 'notifications' && (
-            <div className="bg-white bg-gray-800 rounded-2xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 text-white mb-6 flex items-center">
-                <Bell className="h-6 w-6 mr-3 text-navy-600" />
-                Notification Preferences
-              </h2>
-
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border border-gray-200 border-gray-700 rounded-xl">
-                    <div className="flex items-center space-x-3">
-                      <Mail className="h-5 w-5 text-navy-600" />
-                      <div>
-                        <h3 className="font-semibold text-gray-900 text-white">Email Notifications</h3>
-                        <p className="text-sm text-gray-600 text-gray-400">Order updates, promotions, and account alerts</p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={notifications.email}
-                        onChange={() => handleNotificationChange('email')}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300 peer-focus:ring-navy-800 rounded-full peer bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all border-gray-600 peer-checked:bg-navy-600"></div>
-                    </label>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 border border-gray-200 border-gray-700 rounded-xl">
-                    <div className="flex items-center space-x-3">
-                      <Smartphone className="h-5 w-5 text-navy-600" />
-                      <div>
-                        <h3 className="font-semibold text-gray-900 text-white">SMS Notifications</h3>
-                        <p className="text-sm text-gray-600 text-gray-400">Order confirmations and delivery updates</p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={notifications.sms}
-                        onChange={() => handleNotificationChange('sms')}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300 peer-focus:ring-navy-800 rounded-full peer bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all border-gray-600 peer-checked:bg-navy-600"></div>
-                    </label>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 border border-gray-200 border-gray-700 rounded-xl">
-                    <div className="flex items-center space-x-3">
-                      <Bell className="h-5 w-5 text-navy-600" />
-                      <div>
-                        <h3 className="font-semibold text-gray-900 text-white">Push Notifications</h3>
-                        <p className="text-sm text-gray-600 text-gray-400">Real-time updates and reminders</p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={notifications.push}
-                        onChange={() => handleNotificationChange('push')}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300 peer-focus:ring-navy-800 rounded-full peer bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all border-gray-600 peer-checked:bg-navy-600"></div>
-                    </label>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 border border-gray-200 border-gray-700 rounded-xl">
-                    <div className="flex items-center space-x-3">
-                      <Mail className="h-5 w-5 text-navy-600" />
-                      <div>
-                        <h3 className="font-semibold text-gray-900 text-white">Marketing Emails</h3>
-                        <p className="text-sm text-gray-600 text-gray-400">Promotions, new products, and special offers</p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={notifications.marketing}
-                        onChange={() => handleNotificationChange('marketing')}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300 peer-focus:ring-navy-800 rounded-full peer bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all border-gray-600 peer-checked:bg-navy-600"></div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Danger Zone Tab */}
-          {activeTab === 'danger' && (
-            <div className="bg-white bg-gray-800 rounded-2xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-red-600 mb-6 flex items-center">
-                <AlertTriangle className="h-6 w-6 mr-3" />
-                Danger Zone
-              </h2>
-
-              <div className="space-y-6">
-                <div className="border border-red-200 border-red-800 rounded-xl p-6 bg-red-50 bg-red-900/20">
-                  <h3 className="text-lg font-semibold text-red-800 text-red-200 mb-2 flex items-center">
-                    <Trash2 className="h-5 w-5 mr-2" />
-                    Delete Account
-                  </h3>
-                  <p className="text-sm text-red-700 text-red-300 mb-4">
-                    Once you delete your account, there is no going back. Please be certain. This action will:
-                  </p>
-                  <ul className="text-sm text-red-700 text-red-300 mb-4 space-y-1">
-                    <li>• Permanently delete your profile and all personal data</li>
-                    <li>• Cancel all pending orders and negotiations</li>
-                    <li>• Remove all reviews and ratings you've submitted</li>
-                    <li>• Delete your wishlist and saved preferences</li>
-                  </ul>
-                  <button
-                    onClick={() => setShowDeleteModal(true)}
-                    className="btn bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete My Account
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Delete Account Modal */}
-          {showDeleteModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white bg-gray-800 rounded-2xl shadow-xl max-w-md w-full p-6">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-red-100 bg-red-900/20 rounded-full flex items-center justify-center mr-4">
-                    <AlertTriangle className="h-6 w-6 text-red-600" />
-                  </div>
+            {/* Notifications Tab */}
+            {activeTab === 'notifications' && (
+              <div className="bg-white rounded-xl shadow-sm border p-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Notification Preferences</h2>
+                
+                <div className="space-y-6">
+                  {/* Email Notifications */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 text-white">Delete Account</h3>
-                    <p className="text-sm text-gray-600 text-gray-400">This action cannot be undone</p>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Email Notifications</h3>
+                    <div className="space-y-4">
+                      {[
+                        { key: 'emailNotifications', label: 'Email notifications', description: 'Receive notifications via email' },
+                        { key: 'orderUpdates', label: 'Order updates', description: 'Get notified about order status changes' },
+                        { key: 'priceAlerts', label: 'Price alerts', description: 'Be notified when items on your wishlist go on sale' },
+                        { key: 'vendorUpdates', label: 'Vendor updates', description: 'Updates from vendors you follow' },
+                        { key: 'marketingEmails', label: 'Marketing emails', description: 'Promotional offers and new product announcements' }
+                      ].map((item) => (
+                        <div key={item.key} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                          <div>
+                            <h4 className="font-medium text-gray-900">{item.label}</h4>
+                            <p className="text-sm text-gray-500">{item.description}</p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={notifications[item.key]}
+                              onChange={(e) => handleNotificationChange(item.key, e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Push Notifications */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Push Notifications</h3>
+                    <div className="space-y-4">
+                      {[
+                        { key: 'pushNotifications', label: 'Push notifications', description: 'Receive push notifications on your device' },
+                        { key: 'newProducts', label: 'New products', description: 'Be the first to know about new products' }
+                      ].map((item) => (
+                        <div key={item.key} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                          <div>
+                            <h4 className="font-medium text-gray-900">{item.label}</h4>
+                            <p className="text-sm text-gray-500">{item.description}</p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={notifications[item.key]}
+                              onChange={(e) => handleNotificationChange(item.key, e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* SMS Notifications */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">SMS Notifications</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                        <div>
+                          <h4 className="font-medium text-gray-900">SMS notifications</h4>
+                          <p className="text-sm text-gray-500">Receive important updates via SMS</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={notifications.smsNotifications}
+                            onChange={(e) => handleNotificationChange('smsNotifications', e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                
-                <p className="text-gray-700 text-gray-300 mb-6">
-                  Are you absolutely sure you want to delete your account? This will permanently remove all your data and cannot be reversed.
-                </p>
-                
-                <div className="flex space-x-3">
-                  <button
-                    onClick={() => setShowDeleteModal(false)}
-                    className="flex-1 btn btn-outline"
-                    disabled={loading}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteAccount}
-                    disabled={loading}
-                    className="flex-1 btn bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    {loading ? 'Deleting...' : 'Delete Account'}
-                  </button>
-                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Security Notice */}
-          <div className="mt-6 bg-blue-50 bg-blue-900/20 border border-blue-200 border-blue-800 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-blue-800 text-blue-200 mb-2">
-              🔒 Security Notice
-            </h3>
-            <p className="text-sm text-blue-700 text-blue-300">
-              Your password is encrypted and never stored in plain text. We use industry-standard 
-              security practices to protect your account information.
-            </p>
+            {/* Privacy Tab removed */}
           </div>
         </div>
       </div>

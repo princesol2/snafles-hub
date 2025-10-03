@@ -7,7 +7,24 @@ const OrderContext = createContext();
 export const useOrders = () => {
   const context = useContext(OrderContext);
   if (!context) {
-    throw new Error('useOrders must be used within an OrderProvider');
+    // Fallback stub to avoid hard crash if provider not mounted (e.g., during HMR)
+    console.warn('useOrders used outside OrderProvider; using service fallback.');
+    return {
+      orders: [],
+      currentOrder: null,
+      loading: false,
+      error: null,
+      createOrder: (data) => orderService.createOrder(data),
+      processPayment: (orderId, paymentData) => orderService.processPayment(orderId, paymentData),
+      confirmPayment: (payload) => orderService.confirmPayment(payload),
+      getOrder: (orderId) => orderService.getOrder(orderId),
+      updateOrderStatus: (orderId, status) => orderService.updateOrderStatus(orderId, status),
+      cancelOrder: (orderId, reason) => orderService.cancelOrder(orderId, reason),
+      trackOrder: (orderId) => orderService.trackOrder(orderId),
+      loadOrders: async () => {},
+      getOrdersByStatus: () => [],
+      getRecentOrders: () => [],
+    };
   }
   return context;
 };
@@ -104,7 +121,7 @@ export const OrderProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await orderService.confirmPayment(paymentIntentId);
+      const response = await orderService.confirmPayment({ paymentIntentId, orderId: currentOrder?.id || currentOrder?._id });
       
       // Update current order status
       if (currentOrder) {

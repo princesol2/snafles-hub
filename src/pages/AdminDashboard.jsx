@@ -11,8 +11,6 @@ import {
   Settings,
   Shield,
   AlertTriangle,
-  CheckCircle,
-  XCircle,
   Eye,
   Edit,
   Trash2,
@@ -20,7 +18,6 @@ import {
   Filter,
   DollarSign,
   Star,
-  MessageSquare,
   Store,
   Plus,
   X,
@@ -377,14 +374,6 @@ const AdminDashboard = () => {
           changeType="negative"
         />
         <StatCard
-          title="Active Negotiations"
-          value={stats.activeNegotiations}
-          icon={MessageSquare}
-          color="bg-pink-500"
-          change={18.7}
-          changeType="positive"
-        />
-        <StatCard
           title="Platform Rating"
           value={stats.platformRating}
           icon={Star}
@@ -430,13 +419,6 @@ const AdminDashboard = () => {
               <Package className="h-8 w-8 text-purple-600 mx-auto mb-2" />
               <div className="text-sm font-medium text-gray-900">Manage Products</div>
             </button>
-            <button 
-              onClick={() => setActiveTab('negotiations')}
-              className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-center transition-colors"
-            >
-              <MessageSquare className="h-8 w-8 text-pink-600 mx-auto mb-2" />
-              <div className="text-sm font-medium text-gray-900">View Negotiations</div>
-            </button>
           </div>
         </div>
       </div>
@@ -452,7 +434,6 @@ const AdminDashboard = () => {
               { action: 'New vendor registered', user: 'Artisan Crafts Co.', time: '2 hours ago', type: 'vendor' },
               { action: 'Product approved', user: 'Handmade Treasures', time: '4 hours ago', type: 'product' },
               { action: 'Order completed', user: 'Sarah Johnson', time: '6 hours ago', type: 'order' },
-              { action: 'Negotiation resolved', user: 'Mike Wilson', time: '8 hours ago', type: 'negotiation' },
               { action: 'Payment processed', user: 'Emma Davis', time: '10 hours ago', type: 'payment' }
             ].map((activity, index) => (
               <div key={index} className="flex items-center py-2">
@@ -930,99 +911,6 @@ const AdminDashboard = () => {
       </div>
     );
   };
-
-  const NegotiationsTab = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-900">Negotiation Management</h3>
-        <div className="flex space-x-2">
-          <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-          </button>
-          <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center">
-            <Search className="h-4 w-4 mr-2" />
-            Search
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Negotiation
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Parties
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Price
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Messages
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {[
-              { product: 'Silver Necklace', customer: 'Sarah Johnson', vendor: 'Artisan Crafts', original: 2999, proposed: 2200, status: 'active', messages: 5 },
-              { product: 'Ceramic Vase', customer: 'Mike Wilson', vendor: 'Creative Home', original: 2499, proposed: 2000, status: 'accepted', messages: 3 },
-              { product: 'Wooden Art', customer: 'Emma Davis', vendor: 'Handmade Treasures', original: 4599, proposed: 3500, status: 'rejected', messages: 2 }
-            ].map((neg, index) => (
-              <tr key={index}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{neg.product}</div>
-                  <div className="text-sm text-gray-500">NEG-{String(index + 1).padStart(3, '0')}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{neg.customer}</div>
-                  <div className="text-sm text-gray-500">↔ {neg.vendor}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{formatCurrency(neg.original)}</div>
-                  <div className="text-sm text-gray-500">→ {formatCurrency(neg.proposed)}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    neg.status === 'active' ? 'bg-blue-100 text-blue-800' :
-                    neg.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {neg.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {neg.messages}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex space-x-2">
-                    <button className="text-indigo-600 hover:text-indigo-900">
-                      <Eye className="h-4 w-4" />
-                    </button>
-                    <button className="text-green-600 hover:text-green-900">
-                      <CheckCircle className="h-4 w-4" />
-                    </button>
-                    <button className="text-red-600 hover:text-red-900">
-                      <XCircle className="h-4 w-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
   const SettingsTab = () => (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-gray-900">Platform Settings</h3>
@@ -1163,7 +1051,6 @@ const AdminDashboard = () => {
               { id: 'vendors', name: 'Vendors', icon: Store },
               { id: 'users', name: 'Users', icon: Users },
               { id: 'products', name: 'Products', icon: Package },
-              { id: 'negotiations', name: 'Negotiations', icon: MessageSquare },
               { id: 'settings', name: 'Settings', icon: Settings }
             ].map((tab) => {
               const Icon = tab.icon;
@@ -1191,7 +1078,6 @@ const AdminDashboard = () => {
         {activeTab === 'vendors' && <VendorsTab />}
         {activeTab === 'users' && <UsersTab />}
         {activeTab === 'products' && <ProductsTab />}
-        {activeTab === 'negotiations' && <NegotiationsTab />}
         {activeTab === 'settings' && (
           <div className="space-y-6">
             <SettingsTab />
@@ -1647,3 +1533,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+

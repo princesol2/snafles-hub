@@ -7,7 +7,7 @@ Edit Colors
 - In the <style> block at the top of the SVG, change these tokens:
   - --navy: Deep brand navy (primary)
   - --sky: Accent sky blue (glow, lines, highlights)
-  - --orange: Coins / Snapples Points
+  - --orange: Coins / Snafles Points
   - --bg: Sheet background
 
 Export Notes
@@ -24,4 +24,3 @@ Edits You Might Want
 - Swap text labels with brand fonts.
 - Nudge character/cart positions or scale per panel.
 - Replace the placeholder speech bubble text in panel 7.
-

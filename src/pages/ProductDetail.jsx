@@ -6,6 +6,7 @@ import { useCart } from '../contexts/CartContext'
 import { useAuth } from '../contexts/AuthContext'
 import { productsAPI } from '../services/api'
 import StarRating from '../components/reviews/StarRating'
+import RelatedProducts from '../components/products/RelatedProducts'
 // Negotiation/Chat/Bidding/Assistance/TryOn removed for minimal core
 import LoginModal from '../components/common/LoginModal'
 import toast from 'react-hot-toast'
@@ -25,6 +26,7 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState(null)
   const [selectedColor, setSelectedColor] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isZoomOpen, setIsZoomOpen] = useState(false)
   
   // Feature flags removed for Phase-1
   
@@ -261,7 +263,8 @@ const ProductDetail = () => {
               <img
                 src={images[selectedImage] || '/placeholder-product.jpg'}
                 alt={product.name}
-                className="w-full h-full object-cover transition-opacity duration-500 ease-in-out"
+                className="w-full h-full object-cover transition-opacity duration-500 ease-in-out cursor-zoom-in"
+                onClick={() => setIsZoomOpen(true)}
                 onError={(e) => {
                   e.target.src = '/placeholder-product.jpg'
                 }}
@@ -376,7 +379,42 @@ const ProductDetail = () => {
               )}
             </div>
 
+            {/* Availability + ETA */}
+            <div>
+              {(() => {
+                const stock = selectedSize?.stock ?? product.stock ?? 0
+                if (stock <= 0) {
+                  return <div className="text-red-600 font-semibold">Out of stock</div>
+                }
+                if (stock <= 5) {
+                  return (
+                    <div className="text-orange-600 font-semibold">
+                      Only {stock} left • Estimated delivery 3–5 days
+                    </div>
+                  )
+                }
+                return <div className="text-green-600 font-semibold">In stock • Estimated delivery 3–5 days</div>
+              })()}
+            </div>
+
             <p className="text-gray-600 leading-relaxed">{product.description}</p>
+
+            {/* Product Video */}
+            {product.videoUrl && (
+              <div className="mt-6">
+                <h4 className="heading-4 text-gray-900 mb-4">Product Video</h4>
+                <div className="aspect-video rounded-xl overflow-hidden shadow">
+                  <iframe
+                    className="w-full h-full"
+                    src={product.videoUrl.replace('watch?v=', 'embed/')}
+                    title="Product video"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Variants */}
             {product.variants && product.variants.length > 0 && (
@@ -649,6 +687,24 @@ const ProductDetail = () => {
                   </div>
                 )}
 
+                {/* FAQs */}
+                {Array.isArray(product.faqs) && product.faqs.length > 0 && (
+                  <div className="mt-8">
+                    <h4 className="heading-4 text-gray-900 mb-6">FAQs</h4>
+                    <div className="space-y-3">
+                      {product.faqs.map((f, i) => (
+                        <details key={i} className="group bg-white border border-gray-200 rounded-lg p-4">
+                          <summary className="list-none cursor-pointer font-semibold text-gray-900 flex justify-between items-center">
+                            <span>{f.q}</span>
+                            <span className="text-gray-400 group-open:rotate-180 transition-transform">⌄</span>
+                          </summary>
+                          <div className="mt-2 text-gray-600">{f.a}</div>
+                        </details>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Write Review Section */}
                 {user && (
                   <div className="mt-8">
@@ -706,8 +762,41 @@ const ProductDetail = () => {
         </div>
       </div>
       
+      {/* Related products */}
+      <div className="container">
+        <RelatedProducts product={product} />
+      </div>
+
       {/* Feature Modals */}
       {/* Advanced modals removed */}
+
+      {/* Image Zoom Modal */}
+      {isZoomOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center" onClick={() => setIsZoomOpen(false)}>
+          <div className="relative max-w-5xl w-[92vw]" onClick={(e) => e.stopPropagation()}>
+            <img src={images[selectedImage] || '/placeholder-product.jpg'} alt={product.name} className="w-full h-auto object-contain rounded-lg shadow-lg" />
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={() => setSelectedImage(selectedImage === 0 ? images.length - 1 : selectedImage - 1)}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 hover:bg-white shadow"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="w-5 h-5 text-gray-700" />
+                </button>
+                <button
+                  onClick={() => setSelectedImage(selectedImage === images.length - 1 ? 0 : selectedImage + 1)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 hover:bg-white shadow"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="w-5 h-5 text-gray-700" />
+                </button>
+              </>
+            )}
+            <button onClick={() => setIsZoomOpen(false)} className="absolute top-2 right-2 px-3 py-1.5 rounded-md bg-white/90 hover:bg-white text-gray-700 font-medium shadow">Close</button>
+          </div>
+        </div>
+      )}
 
       {/* Login Modal */}
       <LoginModal 
